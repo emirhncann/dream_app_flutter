@@ -13,7 +13,7 @@ class CustomBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF783FA6), // Background color #783fa6
+        color: Color(0xFF5D009F), // Background color #783fa6
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
