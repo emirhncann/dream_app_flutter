@@ -79,7 +79,7 @@ class _DreamState extends State<Dream> {
                 // "Rüyanı Yorumlat" butonu
                 ElevatedButton(
                   onPressed: () {
-                    // Butona basıldığında yapılacak işlemler
+                    yorumla(context); // Butona tıklandığında yorumla fonksiyonunu çalıştırır
                   },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
@@ -99,8 +99,8 @@ class _DreamState extends State<Dream> {
 
           // Sabit sayaç kısmı sağ altta
           Positioned(
-            right: 16,
-            bottom: screenHeight * 0.15, // Alt kısma sabitlenmiş durumda
+            right: 22,
+            bottom: screenHeight * 0.16, // Alt kısma sabitlenmiş durumda
             child: Text(
               "${dreamText.length}/$maxLength",
               style: TextStyle(color: Colors.white, fontSize: 14),
@@ -114,4 +114,139 @@ class _DreamState extends State<Dream> {
       ),
     );
   }
+
+void yorumla(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        child: Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1d0042), Color(0xFF644092)], // Arka plan rengi
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              height: 450,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // İlk Yorumcu için Card
+                  Card(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: ListTile(
+                      leading: Icon(Icons.pets, color: Color(0xFF6602ad)), // Saniye Abla'nın simgesi
+                      title: Text(
+                        'Saniye Abla Yorumlasın',
+                        style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.amber),
+                          Text(
+                            ' 50',
+                            style: TextStyle(color: Colors.amber, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  Text("Dilersen Profesyonel Yorumculara Yorumlat" ,style: TextStyle(color: Colors.white),),
+                  // Ahmet'in Yorumlaması için Card
+                Card(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage('https://i.imgur.com/OvMZBs9.jpg'), // Ayşe'nin resmi
+                      ),
+                      title: Text(
+                        'Ayşe Yorumlasın',
+                        style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
+                      ),
+                      subtitle: Text(
+                        '48 saat içerisinde',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.amber),
+                          Text(
+                            ' 150',
+                            style: TextStyle(color: Colors.amber, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+
+                  // Ayşe'nin Yorumlaması için Card
+                  Card(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage('https://i.imgur.com/OvMZBs9.jpg'), // Ayşe'nin resmi
+                      ),
+                      title: Text(
+                        'Ayşe Yorumlasın',
+                        style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
+                      ),
+                      subtitle: Text(
+                        '48 saat içerisinde',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.amber),
+                          Text(
+                            ' 150',
+                            style: TextStyle(color: Colors.amber, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Sağ üst köşede kapatma butonu
+            Positioned(
+              right: 0.0,
+              top: 0.0,
+              child: IconButton(
+                icon: Icon(Icons.close, color: Colors.white),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Dialogu kapatır
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
 }

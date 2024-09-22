@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                           decoration: BoxDecoration(
                             image: DecorationImage(
                               image: NetworkImage(
-                                'https://img001.prntscr.com/file/img001/f3toGkpMThWVKrIQlesj-Q.png',
+                                'https://img001.prntscr.com/file/img001/ypofNZJOQhiRyP4BnbokWg.png',
                               ),
                               fit: BoxFit.cover,
                             ),
@@ -154,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                           decoration: BoxDecoration(
                             image: DecorationImage(
                               image: NetworkImage(
-                                'https://img001.prntscr.com/file/img001/ybLlSVNmSGCUldaXLRCjAA.png',
+                                'https://img001.prntscr.com/file/img001/C55w-1qQQD2pZszp0TObsA.png',
                               ),
                               fit: BoxFit.cover,
                             ),
