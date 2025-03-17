@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dream_app_flutter/const/api.dart';
 import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:dream_app_flutter/providers/user_provider.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:lottie/lottie.dart';
 
 class Dream extends StatefulWidget {
   const Dream({super.key});
@@ -20,10 +25,142 @@ class _DreamState extends State<Dream> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Gemini API için model
+  late GenerativeModel _model;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _model = GenerativeModel(
+      model: 'gemini-1.5-flash',
+      apiKey: "AIzaSyBaLCeVvlutMg6kKYrv_ttEqhHcWVPboq4",
+    );
+    _testGeminiConnection();
+  }
+
+  // Gemini API bağlantı testi
+  Future<void> _testGeminiConnection() async {
+    try {
+      final testPrompt = 'Merhaba';
+      final content = [Content.text(testPrompt)];
+      await _model.generateContent(content);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rüya yorumlama servisi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.'),
+            duration: Duration(seconds: 5),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  // Rüya yorumlama fonksiyonu
+  Future<String> _interpretDream(String dreamText) async {
+    try {
+      // Kullanıcı bilgilerini al
+      final userEmail = _auth.currentUser?.email;
+      if (userEmail == null) {
+        throw Exception('Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.');
+      }
+
+      // Kullanıcının detay bilgilerini al
+      final userDoc = await _firestore.collection('users').doc(userEmail).get();
+      final userData = userDoc.data() ?? {};
+      final userName = userData['name'] ?? 'Canım';
+      final userGender = userData['gender'] ?? '';
+      final userBirthDate = userData['dg'] ?? '';
+      final hitap = userGender.toLowerCase() == 'kadın' ? 'canım' : 'yakışıklı';
+
+      // Önce API'den yanıt alalım
+      final prompt = '''
+      Ben deneyimli bir rüya yorumcusuyum ve Carl Jung'un analitik psikoloji teorisine göre rüyaları yorumluyorum. 
+      Şimdi senin için özel bir yorum yapacağım ${userName} ${hitap}.
+
+      Rüyan:
+      $dreamText
+
+      Yorumumda şu başlıkları kullanacağım ve samimi bir dille, falcı üslubuyla konuşacağım:
+
+      1. İlk İzlenimim:
+      (Rüyanın genel enerjisi ve ilk hissettiklerim)
+
+      2. Jung'a Göre Semboller ve Arketipler:
+      (Rüyadaki kolektif bilinçdışı sembolleri ve arketipleri)
+
+      3. Gizli Mesajlar:
+      (Bilinçaltından gelen özel mesajlar)
+
+      4. Önerilerim:
+      (Hayatında yapman gereken değişiklikler)
+
+      Not: Kullanıcı Bilgileri
+      - İsim: $userName
+      - Cinsiyet: $userGender
+      - Doğum Tarihi: $userBirthDate
+
+      Lütfen bu bilgileri göz önünde bulundurarak, samimi ve kişiselleştirilmiş bir yorum yap. 
+      "Canım", "güzelim", "yakışıklım" gibi hitaplar kullan ve falcı üslubuyla konuş.
+      ''';
+
+      final content = [Content.text(prompt)];
+      
+      final response = await _model.generateContent(content)
+          .timeout(
+            Duration(seconds: 60),
+            onTimeout: () => throw TimeoutException('İstek zaman aşımına uğradı canım, bir daha dener misin?'),
+          );
+      
+      if (response.text == null || response.text!.isEmpty) {
+        throw Exception('Ay canım bir sorun oldu, boş yanıt aldım. Tekrar dener misin?');
+      }
+
+      try {
+        // Firestore'a kaydet
+        await _firestore.collection('users').doc(userEmail).set({
+          'email': userEmail,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        await _firestore
+            .collection('users')
+            .doc(userEmail)
+            .collection('yorumlar')
+            .add({
+          'ruya': dreamText,
+          'yorum': response.text,
+          'tarih': FieldValue.serverTimestamp(),
+          'yorumcu': 'Saniye Abla',
+          'userName': userName,
+          'userGender': userGender,
+          'userBirthDate': userBirthDate
+        });
+
+        print('Yorum başarıyla kaydedildi');
+      } catch (e) {
+        print('Firestore kayıt hatası: $e');
+        throw Exception('Ay canım bir sorun çıktı, yorumunu kaydedemedim. Tekrar dener misin?');
+      }
+      
+      return response.text!;
+    } on TimeoutException {
+      throw Exception('Canım bağlantıda sorun var galiba, biraz bekleyip tekrar dener misin?');
+    } catch (e) {
+      print('Rüya yorumlama hatası: $e');
+      if (e.toString().contains('API key')) {
+        throw Exception('Sistemde bir sorun var güzelim, biraz sonra tekrar dener misin?');
+      }
+      throw Exception(e.toString().contains('Exception:') ? e.toString() : 'Ay canım bir sorun çıktı, tekrar deneyebilir misin?');
+    }
   }
 
   @override
@@ -112,6 +249,14 @@ class _DreamState extends State<Dream> {
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
           ),
+
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: CustomBottomNavBar(
@@ -121,137 +266,206 @@ class _DreamState extends State<Dream> {
     );
   }
 
-void yorumla(BuildContext context) {
+void yorumla(BuildContext context) async {
+  if (dreamText.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Lütfen önce rüyanızı yazın.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  // Coin kontrolü
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  if (userProvider.coins < 50) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Yetersiz coin! Rüya yorumlatmak için 50 coin gerekiyor.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
   showDialog(
     context: context,
-    builder: (BuildContext context) {
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
       return Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
-        child: Stack(
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1d0042), Color(0xFF644092)], // Arka plan rengi
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1d0042), Color(0xFF644092)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(20.0),
+            image: DecorationImage(
+              image: AssetImage('assets/images/dream_bg.png'),
+              fit: BoxFit.cover,
+              opacity: 0.2,
+            ),
+          ),
+          height: 300,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                'assets/gif/bulut.json',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Rüyanız yorumlanıyor...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                borderRadius: BorderRadius.circular(20.0),
               ),
-              height: 450,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Saniye Abla için Card
-                  InkWell(
-                    onTap: () async {
-                      final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      bool success = await userProvider.deductCoins(50);
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Saniye Abla rüyanızı yorumluyor...')),
-                        );
-                        Navigator.pop(context); // Dialog'u kapat
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Yetersiz coin! Gerekli coin: 50')),
-                        );
-                      }
-                    },
-                    child: Card(
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      child: ListTile(
-                        leading: Icon(Icons.pets, color: Color(0xFF6602ad)), // Saniye Abla'nın simgesi
-                        title: Text(
-                          'Saniye Abla Yorumlasın',
-                          style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.monetization_on, color: Colors.amber),
-                            Text(
-                              ' 50',
-                              style: TextStyle(color: Colors.amber, fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 40),
-                  Text("Dilersen Profesyonel Yorumculara Yorumlat", style: TextStyle(color: Colors.white)),
-                  // Ayşe için Card
-                  InkWell(
-                    onTap: () async {
-                      final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      bool success = await userProvider.deductCoins(150);
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Ayşe rüyanızı yorumluyor...')),
-                        );
-                        Navigator.pop(context); // Dialog'u kapat
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Yetersiz coin! Gerekli coin: 150')),
-                        );
-                      }
-                    },
-                    child: Card(
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage('https://i.imgur.com/OvMZBs9.jpg'), // Ayşe'nin resmi
-                        ),
-                        title: Text(
-                          'Ayşe Yorumlasın',
-                          style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
-                        ),
-                        subtitle: Text(
-                          '48 saat içerisinde',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.monetization_on, color: Colors.amber),
-                            Text(
-                              ' 150',
-                              style: TextStyle(color: Colors.amber, fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Sağ üst köşede kapatma butonu
-            Positioned(
-              right: 0.0,
-              top: 0.0,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.white),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Dialogu kapatır
-                },
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     },
   );
+
+  try {
+    String interpretation = await _interpretDream(dreamText);
+    
+    // Yorumlama başarılı olduktan sonra coini düş
+    await userProvider.deductCoins(50);
+    
+    setState(() {
+      _isLoading = false;
+    });
+    
+    Navigator.pop(context); // Loading dialogu kapat
+
+    showDialog(
+      context: context,
+      builder: (BuildContext interpretContext) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1d0042), Color(0xFF644092)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(20.0),
+            image: DecorationImage(
+              image: AssetImage('assets/images/stars_bg.png'),
+              fit: BoxFit.cover,
+              opacity: 0.1,
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Rüya Yorumu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.monetization_on,
+                            color: Colors.amber,
+                            size: 20,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '-50',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Card(
+                  color: Colors.white.withOpacity(0.9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      interpretation,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(interpretContext).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF6602ad),
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    'Kapat',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  } catch (error) {
+    setState(() {
+      _isLoading = false;
+    });
+    Navigator.pop(context); // Loading dialogu kapat
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error.toString().replaceAll('Exception: ', '')),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
 }
 
 
