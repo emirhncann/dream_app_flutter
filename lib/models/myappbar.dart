@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dream_app_flutter/screens/login.dart';
+import 'package:provider/provider.dart';
+import 'package:dream_app_flutter/providers/user_provider.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool hasLeading; // Leading alanının gösterilip gösterilmeyeceğini belirler
@@ -15,73 +17,51 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  int _credits = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCredits();
-  }
-
-  Future<void> _loadCredits() async {
-    try {
-      final user = _auth.currentUser;
-      if (user?.email != null) {
-        final userData = await _firestore
-            .collection('users')
-            .doc(user!.email)
-            .get();
-
-        if (userData.exists) {
-          setState(() {
-            _credits = userData.data()?['coin'] ?? 0;
-          });
-        }
-      }
-    } catch (e) {
-      print('Kredi yükleme hatası: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Stack(
-      clipBehavior: Clip.none, // Allows overflow to make sure the logo appears fully
+      clipBehavior: Clip.none,
       children: [
         AppBar(
-          backgroundColor: Color(0xFF5D009F), // Arka plan rengi (#5d009f)
+          backgroundColor: Color(0xFF5D009F),
           centerTitle: true,
           leading: widget.hasLeading
               ? IconButton(
-                  icon: Icon(Icons.menu), // Sol tarafta menü ikonu
-                  onPressed: () {
-                    // Menüye basılınca yapılacaklar
-                  },
+                  icon: Icon(Icons.menu),
+                  onPressed: () {},
                 )
-              : null, // Eğer hasLeading false ise leading boş olacak
+              : null,
           actions: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Icon(Icons.monetization_on, color: Colors.yellow),
-                  SizedBox(width: 4),
-                  Text(
-                    '$_credits', // Firestore'dan çekilen kredi
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              child: Consumer<UserProvider>(
+                builder: (context, userProvider, child) {
+                  return StreamBuilder<int>(
+                    stream: userProvider.getCoinStream(),
+                    builder: (context, snapshot) {
+                      return Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow),
+                          SizedBox(width: 4),
+                          Text(
+                            '${snapshot.data ?? 0}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
               ),
             ),
             IconButton(
               icon: Icon(Icons.exit_to_app, color: Colors.white),
               onPressed: () async {
-                await FirebaseAuth.instance.signOut();
+                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                await userProvider.signOut();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (context) => AuthScreen()),
                 );

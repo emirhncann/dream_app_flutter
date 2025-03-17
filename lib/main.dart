@@ -15,9 +15,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
   runApp(
     ChangeNotifierProvider(
-      create: (_) => UserProvider(),
+      create: (_) => UserProvider()..loadUserData(),
       child: const MyApp(),
     ),
   );
