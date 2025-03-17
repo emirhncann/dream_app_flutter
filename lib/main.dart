@@ -11,8 +11,10 @@ import 'package:provider/provider.dart';
 import 'package:dream_app_flutter/providers/user_provider.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Uygulama başlangıcında Firebase'i başlatabilmek için bu çağrıyı yapın
-  await Firebase.initializeApp();  // Firebase'i başlatın
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
     ChangeNotifierProvider(
       create: (_) => UserProvider(),

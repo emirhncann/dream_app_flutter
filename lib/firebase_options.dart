@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -51,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCEZBuEvR_lLFU2Wqndd7DXj4OKrkf178w',
-    appId: '1:101852566098:android:e911319b5ee2573ebb058b',
+    appId: '1:101852566098:android:0bbfddcacd6502c8bb058b',
     messagingSenderId: '101852566098',
     projectId: 'saniye-abla',
     storageBucket: 'saniye-abla.firebasestorage.app',
@@ -65,4 +56,34 @@ class DefaultFirebaseOptions {
     storageBucket: 'saniye-abla.firebasestorage.app',
     iosBundleId: 'com.example.dreamAppFlutter',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDnINIkCWhdkhM4WpP8Baokk1DVwIjxwSk',
+    appId: '1:101852566098:web:5413e6a8a37c7725bb058b',
+    messagingSenderId: '101852566098',
+    projectId: 'saniye-abla',
+    authDomain: 'saniye-abla.firebaseapp.com',
+    storageBucket: 'saniye-abla.firebasestorage.app',
+    measurementId: 'G-VF7EERCPM3',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyAqmu9b-DcxVSgrUyusg74_LCio308XcyI',
+    appId: '1:101852566098:ios:db1229ad2258a9d1bb058b',
+    messagingSenderId: '101852566098',
+    projectId: 'saniye-abla',
+    storageBucket: 'saniye-abla.firebasestorage.app',
+    iosBundleId: 'com.example.dreamAppFlutter',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyDnINIkCWhdkhM4WpP8Baokk1DVwIjxwSk',
+    appId: '1:101852566098:web:135b46f86193e293bb058b',
+    messagingSenderId: '101852566098',
+    projectId: 'saniye-abla',
+    authDomain: 'saniye-abla.firebaseapp.com',
+    storageBucket: 'saniye-abla.firebasestorage.app',
+    measurementId: 'G-MB1D2Y48XF',
+  );
+
 }
