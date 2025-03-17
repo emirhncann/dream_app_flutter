@@ -1,8 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dream_app_flutter/screens/login.dart';
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool hasLeading; // Leading alanının gösterilip gösterilmeyeceğini belirler
   CustomAppBar({this.hasLeading = false});
+
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+
+  @override
+  _CustomAppBarState createState() => _CustomAppBarState();
+}
+
+class _CustomAppBarState extends State<CustomAppBar> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  int _credits = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCredits();
+  }
+
+  Future<void> _loadCredits() async {
+    try {
+      final user = _auth.currentUser;
+      if (user?.email != null) {
+        final userData = await _firestore
+            .collection('users')
+            .doc(user!.email)
+            .get();
+
+        if (userData.exists) {
+          setState(() {
+            _credits = userData.data()?['coin'] ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      print('Kredi yükleme hatası: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +53,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         AppBar(
           backgroundColor: Color(0xFF5D009F), // Arka plan rengi (#5d009f)
           centerTitle: true,
-          leading: hasLeading
+          leading: widget.hasLeading
               ? IconButton(
                   icon: Icon(Icons.menu), // Sol tarafta menü ikonu
                   onPressed: () {
@@ -28,7 +69,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Icon(Icons.monetization_on, color: Colors.yellow),
                   SizedBox(width: 4),
                   Text(
-                    '150', // Coin değeri
+                    '$_credits', // Firestore'dan çekilen kredi
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -36,6 +77,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              icon: Icon(Icons.exit_to_app, color: Colors.white),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => AuthScreen()),
+                );
+              },
             ),
           ],
         ),
@@ -58,7 +108,4 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ],
     );
   }
-
-  @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
 }

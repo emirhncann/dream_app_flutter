@@ -2,6 +2,8 @@ import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:dream_app_flutter/screens/dream.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -10,6 +12,42 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _firstName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = _auth.currentUser;
+      if (user?.email != null) {
+        final userEmail = user!.email;
+        print('UserEmail: $userEmail'); // Debug için
+
+        final userData = await _firestore
+            .collection('users')
+            .doc(userEmail)  // uid yerine email kullanıyoruz
+            .get();
+
+        print('UserData exists: ${userData.exists}'); // Debug için
+        print('UserData: ${userData.data()}'); // Debug için
+
+        if (userData.exists) {
+          setState(() {
+            _firstName = userData.data()?['first_name'] ?? '';
+          });
+          print('FirstName: $_firstName'); // Debug için
+        }
+      }
+    } catch (e) {
+      print('Kullanıcı bilgisi yükleme hatası: $e');
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -65,7 +103,7 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Ahmet Numan', // Burayı dinamik olarak güncelleyebilirsiniz
+                _firstName, // Firestore'dan çekilen isim
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,

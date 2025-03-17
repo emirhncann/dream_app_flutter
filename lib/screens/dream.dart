@@ -1,6 +1,8 @@
 import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Dream extends StatefulWidget {
   const Dream({super.key});
@@ -13,11 +15,48 @@ class _DreamState extends State<Dream> {
   int _selectedIndex = 0;
   String dreamText = ""; // Kullanıcının rüya metnini tutar
   int maxLength = 1000; // Karakter sınırı
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  // Coin düşürme fonksiyonu
+  Future<bool> deductCoins(int amount) async {
+    try {
+      final user = _auth.currentUser;
+      if (user?.email != null) {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(user!.email)
+            .get();
+
+        if (userDoc.exists) {
+          int currentCoins = userDoc.data()?['coin'] ?? 0;
+          
+          if (currentCoins < amount) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Yetersiz coin! Gerekli coin: $amount')),
+            );
+            return false;
+          }
+
+          await _firestore
+              .collection('users')
+              .doc(user.email)
+              .update({'coin': currentCoins - amount});
+          
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Coin düşme hatası: $e');
+      return false;
+    }
   }
 
   @override
@@ -140,26 +179,37 @@ void yorumla(BuildContext context) {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // İlk Yorumcu için Card
-                  Card(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
-                    child: ListTile(
-                      leading: Icon(Icons.pets, color: Color(0xFF6602ad)), // Saniye Abla'nın simgesi
-                      title: Text(
-                        'Saniye Abla Yorumlasın',
-                        style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
+                  InkWell(
+                    onTap: () async {
+                      bool success = await deductCoins(50);
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Saniye Abla rüyanızı yorumluyor...')),
+                        );
+                        Navigator.pop(context); // Dialog'u kapat
+                      }
+                    },
+                    child: Card(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.monetization_on, color: Colors.amber),
-                          Text(
-                            ' 50',
-                            style: TextStyle(color: Colors.amber, fontSize: 16),
-                          ),
-                        ],
+                      child: ListTile(
+                        leading: Icon(Icons.pets, color: Color(0xFF6602ad)), // Saniye Abla'nın simgesi
+                        title: Text(
+                          'Saniye Abla Yorumlasın',
+                          style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.monetization_on, color: Colors.amber),
+                            Text(
+                              ' 50',
+                              style: TextStyle(color: Colors.amber, fontSize: 16),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -198,32 +248,43 @@ void yorumla(BuildContext context) {
                   SizedBox(height: 20),
 
                   // Ayşe'nin Yorumlaması için Card
-                  Card(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: NetworkImage('https://i.imgur.com/OvMZBs9.jpg'), // Ayşe'nin resmi
+                  InkWell(
+                    onTap: () async {
+                      bool success = await deductCoins(150);
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Ayşe rüyanızı yorumluyor...')),
+                        );
+                        Navigator.pop(context); // Dialog'u kapat
+                      }
+                    },
+                    child: Card(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
                       ),
-                      title: Text(
-                        'Ayşe Yorumlasın',
-                        style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
-                      ),
-                      subtitle: Text(
-                        '48 saat içerisinde',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.monetization_on, color: Colors.amber),
-                          Text(
-                            ' 150',
-                            style: TextStyle(color: Colors.amber, fontSize: 16),
-                          ),
-                        ],
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage('https://i.imgur.com/OvMZBs9.jpg'), // Ayşe'nin resmi
+                        ),
+                        title: Text(
+                          'Ayşe Yorumlasın',
+                          style: TextStyle(color: Color(0xFF6602ad), fontSize: 18),
+                        ),
+                        subtitle: Text(
+                          '48 saat içerisinde',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.monetization_on, color: Colors.amber),
+                            Text(
+                              ' 150',
+                              style: TextStyle(color: Colors.amber, fontSize: 16),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
