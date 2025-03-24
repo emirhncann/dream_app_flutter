@@ -30,81 +30,67 @@ class CustomBottomNavBar extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-      
-        child: BottomNavigationBar(
-          items: <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selectedIndex == 0 ? Color(0xFF6602ad).withOpacity(0.2) : Colors.transparent,
-                ),
-                child: Icon(Icons.home_rounded),
+      child: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selectedIndex == 0 ? Colors.white.withOpacity(0.2) : Colors.transparent,
               ),
-              label: 'Ana Sayfa',
+              child: Icon(Icons.home_rounded),
             ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selectedIndex == 1 ? Color(0xFF6602ad).withOpacity(0.2) : Colors.transparent,
-                ),
-                child: Icon(Icons.book_rounded),
-              ),
-              label: 'Yorumlarım',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selectedIndex == 2 ? Color(0xFF6602ad).withOpacity(0.2) : Colors.transparent,
-                ),
-                child: Icon(Icons.person_rounded),
-              ),
-              label: 'Profil',
-            ),
-          ],
-          currentIndex: selectedIndex,
-          selectedItemColor: Color(0xFF6602ad),
-          unselectedItemColor: Colors.grey[400],
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+            label: 'Ana Sayfa',
           ),
-          unselectedLabelStyle: TextStyle(
-            fontSize: 12,
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selectedIndex == 1 ? Colors.white.withOpacity(0.2) : Colors.transparent,
+              ),
+              child: Icon(Icons.nights_stay_rounded),
+            ),
+            label: 'Rüya Yorumla',
           ),
-          elevation: 0,
-          onTap: (index) {
-            onItemTapped(index);
-            switch (index) {
-              case 0:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomePage()),
-                );
-                break;
-              case 1:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => DreamInterpretations()),
-                );
-                break;
-              case 2:
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => DreamInterpretations()),
-                );
-                break;
-            }
-          },
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selectedIndex == 2 ? Colors.white.withOpacity(0.2) : Colors.transparent,
+              ),
+              child: Icon(Icons.stars_rounded),
+            ),
+            label: 'Astroloji',
+          ),
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selectedIndex == 3 ? Colors.white.withOpacity(0.2) : Colors.transparent,
+              ),
+              child: Icon(Icons.person_rounded),
+            ),
+            label: 'Profil',
+          ),
+        ],
+        currentIndex: selectedIndex,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(0.5),
+        backgroundColor: Colors.transparent,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
         ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12,
+        ),
+        elevation: 0,
+        onTap: onItemTapped,
       ),
     );
   }
