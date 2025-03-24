@@ -63,15 +63,8 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Rüya Yorumların',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
+                 
+                  SizedBox(height: 29),
                   Text(
                     'Geçmiş rüya yorumlarını burada görebilirsin',
                     style: TextStyle(

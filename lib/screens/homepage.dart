@@ -160,7 +160,7 @@ class _HomePageState extends State<HomePage> {
                   GestureDetector(
                     onTap: () => _checkAndNavigate(context, 50, Dream()),
                     child: Container(
-                      height: 180,
+                      height: 150,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -243,7 +243,7 @@ class _HomePageState extends State<HomePage> {
                   GestureDetector(
                     onTap: () => _checkAndNavigate(context, 30, '/daily_astrology' as Widget),
                     child: Container(
-                      height: 180,
+                      height: 150,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
