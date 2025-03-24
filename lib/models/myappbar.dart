@@ -25,6 +25,14 @@ class _CustomAppBarState extends State<CustomAppBar> {
         AppBar(
           backgroundColor: Color(0xFF5D009F),
           centerTitle: true,
+          title: Text(
+            '',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           leading: widget.hasLeading
               ? IconButton(
                   icon: Icon(Icons.menu),
@@ -70,19 +78,22 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ],
         ),
         Positioned(
-          top: 20.0, // Adjusted to move above the app bar
-          left: MediaQuery.of(context).size.width / 2 - 50, // Updated for centering based on new size
+          top: 20.0,
+          left: MediaQuery.of(context).size.width / 2 - 50,
           child: Container(
-            width: 100, // Increased width
-            height: 100, // Increased height
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF6602AD) // Yuvarlak şeklin rengi
+              color: Color(0xFF6602AD)
             ),
-           /* child: Padding(
+            child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Image.asset('assets/logo.png'), // Logo burada
-            ),*/
+              child: Image.asset(
+                'assets/img/logo.png',
+                fit: BoxFit.contain,
+              ),
+            ),
           ),
         ),
       ],

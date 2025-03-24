@@ -19,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _firstName = '';
+  String? _userName;
 
   @override
   void initState() {
@@ -111,248 +112,202 @@ class _HomePageState extends State<HomePage> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              SizedBox(height: 20),
-              // Rüya Yorumlama Kartı
-              GestureDetector(
-                onTap: () => _checkAndNavigate(context, 50, Dream()),
-                child: Container(
-                  height: 180,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 15,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF2B1B5C),  // Koyu gece mavisi
-                        Color(0xFF4B3C8C),  // Orta ton mor
-                        Color(0xFF8B72BE),  // Açık mor
-                      ],
-                      stops: [0.2, 0.6, 1.0],
+        child: Column(
+          children: [
+            SizedBox(height: 40), // Logo için boşluk
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Saniye Abla\'ya Hoşgeldin ${_firstName.isNotEmpty ? _firstName : 'Canım'}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.3),
+                      offset: Offset(0, 2),
+                      blurRadius: 4,
                     ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Arka plan deseni
-                      Positioned(
-                        right: -30,
-                        top: -30,
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.white.withOpacity(0.1),
-                                Colors.transparent,
-                              ],
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.all(16),
+                children: [
+                  SizedBox(height: 20),
+                  // Rüya Yorumlama Kartı
+                  GestureDetector(
+                    onTap: () => _checkAndNavigate(context, 50, Dream()),
+                    child: Container(
+                      height: 180,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF1d0042),
+                            Color(0xFF644092),
+                            Color(0xFF8b64bd),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          // Arka plan deseni
+                          Positioned(
+                            right: -20,
+                            top: -20,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.white.withOpacity(0.15),
+                                    Colors.white.withOpacity(0.05),
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.5, 1.0],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      // İçerik
-                      Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          // İçerik
+                          Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Row(
                                   children: [
-                                    Icon(
-                                      Icons.nights_stay,
-                                      color: Colors.white.withOpacity(0.9),
-                                      size: 32,
-                                    ),
+                                    Icon(Icons.nights_stay, color: Colors.white, size: 28),
                                     SizedBox(width: 12),
                                     Text(
-                                      'Rüyanı Yorumlat',
+                                      'Rüya Yorumla',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white,
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: userProvider.coins >= 50 
-                                        ? Colors.green.withOpacity(0.2)
-                                        : Colors.red.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.monetization_on,
-                                        color: Colors.amber,
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '50',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                SizedBox(height: 12),
+                                Text(
+                                  'Rüyanı yaz, yapay zeka destekli detaylı yorumunu al',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Rüyalarının gizli anlamlarını keşfet',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 16,
-                              ),
-                            ),
-                            Spacer(),
-                            Text(
-                              'Mevcut Coin: ${userProvider.coins}',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 14,
-                              ),
-                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  // Günlük Astroloji Kartı
+                  GestureDetector(
+                    onTap: () => _checkAndNavigate(context, 30, '/daily_astrology' as Widget),
+                    child: Container(
+                      height: 180,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF2B1B5C),  // Koyu gece mavisi
+                            Color(0xFF4B3C8C),  // Orta ton mor
+                            Color(0xFF8B72BE),  // Açık mor
                           ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              // Günlük Astroloji Kartı
-              Container(
-                height: 180,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1A237E),  // Koyu gece mavisi
-                      Color(0xFF3949AB),  // Orta ton mavi
-                      Color(0xFF5C6BC0),  // Açık mavi
-                    ],
-                    stops: [0.2, 0.6, 1.0],
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Arka plan deseni
-                    Positioned(
-                      left: -30,
-                      bottom: -30,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.white.withOpacity(0.1),
-                              Colors.transparent,
-                            ],
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                    // İçerik
-                    Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Stack(
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                color: Colors.white.withOpacity(0.9),
-                                size: 32,
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                'Günlük Astroloji',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                          // Arka plan deseni
+                          Positioned(
+                            left: -20,
+                            bottom: -20,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.white.withOpacity(0.15),
+                                    Colors.white.withOpacity(0.05),
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.5, 1.0],
                                 ),
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Yıldızlar bugün senin için ne diyor?',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 16,
                             ),
                           ),
-                          Spacer(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
+                          // İçerik
+                          Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
                                   children: [
-                                    Icon(
-                                      Icons.monetization_on,
-                                      color: Colors.amber,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 4),
+                                    Icon(Icons.stars, color: Colors.white, size: 28),
+                                    SizedBox(width: 12),
                                     Text(
-                                      '30',
+                                      'Günlük Astroloji',
                                       style: TextStyle(
                                         color: Colors.white,
+                                        fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                SizedBox(height: 12),
+                                Text(
+                                  'Günlük burç yorumunu ve astrolojik tahminlerini öğren',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: CustomBottomNavBar(

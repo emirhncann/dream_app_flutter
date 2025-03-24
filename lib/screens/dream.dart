@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:dream_app_flutter/providers/user_provider.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:lottie/lottie.dart';
+import 'package:dream_app_flutter/screens/dream_interpretations.dart';
 
 class Dream extends StatefulWidget {
   const Dream({super.key});
@@ -107,6 +108,7 @@ class _DreamState extends State<Dream> {
       - İsim: $userName
       - Cinsiyet: $userGender
       - Doğum Tarihi: $userBirthDate
+      Yorumunun içinde ismini kullan
 
       Lütfen bu bilgileri göz önünde bulundurarak, samimi ve kişiselleştirilmiş bir yorum yap. 
       "Canım", "güzelim", "yakışıklım" gibi hitaplar kullan ve falcı üslubuyla konuş.
@@ -142,7 +144,9 @@ class _DreamState extends State<Dream> {
           'yorumcu': 'Saniye Abla',
           'userName': userName,
           'userGender': userGender,
-          'userBirthDate': userBirthDate
+          'userBirthDate': userBirthDate,
+          'timerEnd': Timestamp.fromDate(DateTime.now().add(Duration(minutes: 3))), // 3 dakika sonrası için timestamp
+          'isTimerActive': true // Timer'ın aktif olup olmadığını belirten flag
         });
 
         print('Yorum başarıyla kaydedildi');
@@ -353,106 +357,19 @@ void yorumla(BuildContext context) async {
     });
     
     Navigator.pop(context); // Loading dialogu kapat
-
-    showDialog(
-      context: context,
-      builder: (BuildContext interpretContext) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        child: Container(
-          padding: EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1d0042), Color(0xFF644092)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(20.0),
-            image: DecorationImage(
-              image: AssetImage('assets/images/stars_bg.png'),
-              fit: BoxFit.cover,
-              opacity: 0.1,
-            ),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Rüya Yorumu',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.monetization_on,
-                            color: Colors.amber,
-                            size: 20,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '-50',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                Card(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      interpretation,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(interpretContext).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF6602ad),
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    'Kapat',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    
+    // Başarılı mesajı göster ve yorumlar sayfasına yönlendir
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Rüyanız başarıyla yorumlandı!'),
+        backgroundColor: Colors.green,
       ),
+    );
+    
+    // Yorumlar sayfasına yönlendir
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => DreamInterpretations()),
     );
   } catch (error) {
     setState(() {
