@@ -2,6 +2,7 @@ import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:dream_app_flutter/screens/dream.dart';
 import 'package:dream_app_flutter/screens/dream_interpretations.dart';
+import 'package:dream_app_flutter/screens/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -41,7 +42,7 @@ class _HomePageState extends State<HomePage> {
 
         final userData = await _firestore
             .collection('users')
-            .doc(userEmail)  // uid yerine email kullanıyoruz
+            .doc(userEmail)
             .get();
 
         print('UserData exists: ${userData.exists}'); // Debug için
@@ -75,7 +76,7 @@ class _HomePageState extends State<HomePage> {
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Dream()),
+          MaterialPageRoute(builder: (context) => Profile()),
         );
         break;
     }

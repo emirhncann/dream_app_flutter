@@ -40,6 +40,18 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
     }
   }
 
+  // Rüya metnini kısaltma fonksiyonu
+  String _getSummaryText(String text) {
+    // Metni nokta, virgül veya boşluklardan böl
+    List<String> words = text.split(RegExp(r'[.,\s]+'));
+    
+    // İlk 5 kelimeyi al (veya metin daha kısaysa tümünü)
+    words = words.take(5).toList();
+    
+    // Kelimeleri birleştir ve sonuna ... ekle
+    return words.join(' ') + (text.split(' ').length > 5 ? '...' : '');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -292,7 +304,7 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
                                   ),
                                   SizedBox(height: 12),
                                   Text(
-                                    data['ruya'] ?? '',
+                                    _getSummaryText(data['ruya'] ?? ''),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(

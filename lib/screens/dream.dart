@@ -12,6 +12,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:lottie/lottie.dart';
 import 'package:dream_app_flutter/screens/dream_interpretations.dart';
 import 'package:dream_app_flutter/screens/homepage.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class Dream extends StatefulWidget {
   const Dream({super.key});
@@ -30,6 +31,11 @@ class _DreamState extends State<Dream> {
   // Gemini API için model
   late GenerativeModel _model;
   bool _isLoading = false;
+  
+  // Speech to text değişkenleri
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  bool _isSpeechEnabled = false;
 
   @override
   void initState() {
@@ -39,6 +45,7 @@ class _DreamState extends State<Dream> {
       apiKey: "AIzaSyBaLCeVvlutMg6kKYrv_ttEqhHcWVPboq4",
     );
     _testGeminiConnection();
+    _initSpeech();
   }
 
   // Gemini API bağlantı testi
@@ -57,6 +64,72 @@ class _DreamState extends State<Dream> {
           ),
         );
       }
+    }
+  }
+
+  // Speech to text başlatma
+  Future<void> _initSpeech() async {
+    _isSpeechEnabled = await _speech.initialize(
+      onError: (error) => print('Speech Error: $error'),
+      onStatus: (status) => print('Speech Status: $status'),
+      debugLogging: true,
+    );
+    setState(() {});
+  }
+
+  // Ses kaydını başlat/durdur
+  Future<void> _toggleListening(BuildContext context) async {
+    if (!_isSpeechEnabled) {
+      // İzin kontrolü
+      _isSpeechEnabled = await _speech.initialize(
+        onError: (error) => print('Speech Error: $error'),
+        onStatus: (status) => print('Speech Status: $status'),
+        debugLogging: true,
+      );
+      
+      if (!_isSpeechEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mikrofon izni gerekli. Lütfen ayarlardan izin verin.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    if (!_isListening) {
+      // Coin kontrolü
+      if (userProvider.coins < 50) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sesli anlatım için 50 coin gerekiyor.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Coinleri düş
+      await userProvider.deductCoins(50);
+      
+      // Ses kaydını başlat
+      if (await _speech.listen(
+        onResult: (result) {
+          setState(() {
+            dreamText = result.recognizedWords;
+          });
+        },
+        localeId: 'tr_TR',
+        cancelOnError: true,
+      )) {
+        setState(() => _isListening = true);
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
     }
   }
 
@@ -264,6 +337,11 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                               dreamText = text;
                             });
                           },
+                          controller: TextEditingController(text: dreamText)..selection = TextSelection.fromPosition(
+                            TextPosition(offset: dreamText.length),
+                          ),
+                          textAlign: TextAlign.left,
+                          textDirection: TextDirection.ltr,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -277,24 +355,68 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                             ),
                             border: InputBorder.none,
                             counterText: "",
+                            alignLabelWithHint: true,
                           ),
                         ),
                         Positioned(
                           right: 0,
                           bottom: 0,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: Text(
-                              "${dreamText.length}/$maxLength",
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 12,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Mikrofon butonu
+                              Container(
+                                margin: EdgeInsets.only(right: 8),
+                                child: IconButton(
+                                  onPressed: () => _toggleListening(context),
+                                  icon: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Icon(
+                                        _isListening ? Icons.stop : Icons.mic,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                      if (!_isListening)
+                                        Positioned(
+                                          right: 0,
+                                          top: 0,
+                                          child: Container(
+                                            padding: EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Color(0xFF6602ad),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Text(
+                                              '50',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
+                              // Karakter sayacı
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Text(
+                                  "${dreamText.length}/$maxLength",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -474,6 +596,5 @@ void yorumla(BuildContext context) async {
     );
   }
 }
-
 
 }
