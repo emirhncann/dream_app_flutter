@@ -11,6 +11,7 @@ import 'package:dream_app_flutter/providers/user_provider.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:lottie/lottie.dart';
 import 'package:dream_app_flutter/screens/dream_interpretations.dart';
+import 'package:dream_app_flutter/screens/homepage.dart';
 
 class Dream extends StatefulWidget {
   const Dream({super.key});
@@ -20,7 +21,7 @@ class Dream extends StatefulWidget {
 }
 
 class _DreamState extends State<Dream> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2; // Profil seçili
   String dreamText = ""; // Kullanıcının rüya metnini tutar
   int maxLength = 1000; // Karakter sınırı
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -60,9 +61,25 @@ class _DreamState extends State<Dream> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == _selectedIndex) return;
+    
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+        break;
+      case 1:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => DreamInterpretations()),
+        );
+        break;
+      case 2:
+        // Zaten Profil sayfasındayız
+        break;
+    }
   }
 
   // Rüya yorumlama fonksiyonu
@@ -77,41 +94,44 @@ class _DreamState extends State<Dream> {
       // Kullanıcının detay bilgilerini al
       final userDoc = await _firestore.collection('users').doc(userEmail).get();
       final userData = userDoc.data() ?? {};
-      final userName = userData['name'] ?? 'Canım';
+      final userName = userData['first_name'] ?? 'Canım';
       final userGender = userData['gender'] ?? '';
       final userBirthDate = userData['dg'] ?? '';
       final hitap = userGender.toLowerCase() == 'kadın' ? 'canım' : 'yakışıklı';
 
       // Önce API'den yanıt alalım
       final prompt = '''
-      Ben deneyimli bir rüya yorumcusuyum ve Carl Jung'un analitik psikoloji teorisine göre rüyaları yorumluyorum. 
-      Şimdi senin için özel bir yorum yapacağım ${userName} ${hitap}.
+      Ben deneyimli bir rüya yorumcusuyum ve Carl Jung'un analitik psikoloji yaklaşımına göre rüyaları semboller ve arketipler üzerinden yorumluyorum.
 
-      Rüyan:
-      $dreamText
+Şimdi kullanıcıdan aldığım bilgilerle ona özel bir rüya yorumu yapacağım.
 
-      Yorumumda şu başlıkları kullanacağım ve samimi bir dille, falcı üslubuyla konuşacağım:
+Kullanıcı Bilgileri:
+– İsim: ${userName}
+– Cinsiyet: ${userGender}
+– Doğum Tarihi: ${userBirthDate}
 
-      1. İlk İzlenimim:
-      (Rüyanın genel enerjisi ve ilk hissettiklerim)
+Rüya Metni:
+${dreamText}
 
-      2. Jung'a Göre Semboller ve Arketipler:
-      (Rüyadaki kolektif bilinçdışı sembolleri ve arketipleri)
+Şu kurallara göre yaz:
 
-      3. Gizli Mesajlar:
-      (Bilinçaltından gelen özel mesajlar)
+Yorum tekdüze ve şablon gibi olmasın. Her rüya farklı bir tonda yorumlansın.
 
-      4. Önerilerim:
-      (Hayatında yapman gereken değişiklikler)
+Rüyanın duygusuna göre yorumun atmosferi şekillensin: gizemli, huzurlu, içsel, coşkulu, hüzünlü vs.
 
-      Not: Kullanıcı Bilgileri
-      - İsim: $userName
-      - Cinsiyet: $userGender
-      - Doğum Tarihi: $userBirthDate
-      Yorumunun içinde ismini kullan
+Falcı-ruhlu ama yapay olmayan, doğal bir hitabetle yaz. "Canım", "tatlım", "yakışıklım", "güzel ruhlu" gibi ifadeleri bağlama uygun olarak kullan.
 
-      Lütfen bu bilgileri göz önünde bulundurarak, samimi ve kişiselleştirilmiş bir yorum yap. 
-      "Canım", "güzelim", "yakışıklım" gibi hitaplar kullan ve falcı üslubuyla konuş.
+Jung'un teorisini temel al, ama bunu akademik dille değil, hikâye anlatır gibi, sezgisel ve etkileyici bir dille aktar.
+
+Başlıklar zorunlu değil. Eğer rüyanın doğasına uygunsa bölümlere ayrılabilir ama bazen tümüyle akışkan ve serbest bir anlatım tercih edilebilir.
+
+Yorumu, kullanıcının hayatında bir farkındalık yaratacak şekilde bitir. Ona içsel bir mesaj ver ya da bir öneride bulun.
+
+Gerektiğinde kullanıcı ismini (örneğin: "Ahh ${userName}'cim...") içten bir dille aralara serpiştir.
+
+Jung'a göre yorumladığından bahsetme.
+
+doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl şeklinde doğum günü verme çok yapay duruyor
       ''';
 
       final content = [Content.text(prompt)];
@@ -181,76 +201,144 @@ class _DreamState extends State<Dream> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF1d0042), // Üst kısım rengi
-                  Color(0xFF8b64bd), // Alt kısım rengi
+                  Color(0xFF1d0042),
+                  Color(0xFF8b64bd),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 50),
-                
-                // Rüya metnini girebileceği TextField
-                Container(
-                  height: screenHeight * 0.6, // Yükseklik ekranın %60'ı
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF783FA6), // Arka plan rengi
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextField(
-                    maxLines: null, // Satır sayısını sınırlamamak için
-                    maxLength: maxLength,
-                    onChanged: (text) {
-                      setState(() {
-                        dreamText = text;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: "Rüyanı buraya yaz...",
-                      hintStyle: TextStyle(color: Colors.white), // Hint style
-                      border: InputBorder.none,
-                      counterText: "", // Sayaç kısmını TextField içinden kaldırdık
-                    ),
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-
-                SizedBox(height: 10), // Boşluk
-
-                SizedBox(height: 20), // Boşluk
-
-                // "Rüyanı Yorumlat" butonu
-                ElevatedButton(
-                  onPressed: () {
-                    yorumla(context); // Butona tıklandığında yorumla fonksiyonunu çalıştırır
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    backgroundColor: Color(0xFF6602ad), // Buton rengi
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                  
+                  // Başlık ve açıklama
+                  Text(
+                    "Rüyanı Anlat",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: Text(
-                    "Rüyanı Yorumlat",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  SizedBox(height: 8),
+                  Text(
+                    "Rüyanı detaylı bir şekilde anlatırsan daha iyi bir yorum alabirsin",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                  
+                  // Rüya yazma alanı
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    margin: EdgeInsets.symmetric(horizontal: 8),
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF783FA6).withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        TextField(
+                          maxLines: null,
+                          maxLength: maxLength,
+                          onChanged: (text) {
+                            setState(() {
+                              dreamText = text;
+                            });
+                          },
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            height: 1.5,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: "Rüyanı buraya yaz...",
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 16,
+                            ),
+                            border: InputBorder.none,
+                            counterText: "",
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Text(
+                              "${dreamText.length}/$maxLength",
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-          // Sabit sayaç kısmı sağ altta
-          Positioned(
-            right: 22,
-            bottom: screenHeight * 0.16, // Alt kısma sabitlenmiş durumda
-            child: Text(
-              "${dreamText.length}/$maxLength",
-              style: TextStyle(color: Colors.white, fontSize: 14),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+
+                  // Yorumlat butonu
+                  Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.symmetric(horizontal: 8),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        yorumla(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Color(0xFF6602ad),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.auto_awesome, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            "Rüyanı Yorumlat",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.08),
+                ],
+              ),
             ),
           ),
 
@@ -258,7 +346,9 @@ class _DreamState extends State<Dream> {
             Container(
               color: Colors.black54,
               child: Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
               ),
             ),
         ],

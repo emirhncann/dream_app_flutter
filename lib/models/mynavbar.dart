@@ -1,7 +1,4 @@
-import 'package:dream_app_flutter/screens/homepage.dart';
 import 'package:flutter/material.dart';
-import 'package:dream_app_flutter/screens/dream_interpretations.dart';
-
 
 class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -50,9 +47,9 @@ class CustomBottomNavBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: selectedIndex == 1 ? Colors.white.withOpacity(0.2) : Colors.transparent,
               ),
-              child: Icon(Icons.nights_stay_rounded),
+              child: Icon(Icons.book_rounded),
             ),
-            label: 'Rüya Yorumla',
+            label: 'Yorumlarım',
           ),
           BottomNavigationBarItem(
             icon: Container(
@@ -60,17 +57,6 @@ class CustomBottomNavBar extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: selectedIndex == 2 ? Colors.white.withOpacity(0.2) : Colors.transparent,
-              ),
-              child: Icon(Icons.stars_rounded),
-            ),
-            label: 'Astroloji',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selectedIndex == 3 ? Colors.white.withOpacity(0.2) : Colors.transparent,
               ),
               child: Icon(Icons.person_rounded),
             ),

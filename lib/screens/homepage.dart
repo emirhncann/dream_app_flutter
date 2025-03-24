@@ -1,6 +1,7 @@
 import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:dream_app_flutter/screens/dream.dart';
+import 'package:dream_app_flutter/screens/dream_interpretations.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -59,9 +60,25 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == _selectedIndex) return;
+    
+    switch (index) {
+      case 0:
+        // Zaten Ana Sayfa'dayız
+        break;
+      case 1:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => DreamInterpretations()),
+        );
+        break;
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Dream()),
+        );
+        break;
+    }
   }
 
   void _checkAndNavigate(BuildContext context, int requiredCoins, Widget page) {

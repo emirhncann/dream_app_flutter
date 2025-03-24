@@ -1,154 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
-import 'dart:async';
+import 'package:dream_app_flutter/screens/homepage.dart';
+import 'package:dream_app_flutter/screens/dream.dart';
 
 class DreamInterpretations extends StatefulWidget {
-  const DreamInterpretations({super.key});
-
   @override
-  State<DreamInterpretations> createState() => _DreamInterpretationsState();
+  _DreamInterpretationsState createState() => _DreamInterpretationsState();
 }
 
 class _DreamInterpretationsState extends State<DreamInterpretations> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  int _selectedIndex = 1;
-  
-  // Sayfalama için değişkenler
-  final int _limit = 10;
-  DocumentSnapshot? _lastDocument;
-  bool _hasMore = true;
-  bool _isLoading = false;
-  List<DocumentSnapshot> _yorumlar = [];
-  Timer? _timer;
-  int _remainingTime = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _getYorumlar();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _startTimer(DocumentSnapshot lastYorum) {
-    _timer?.cancel();
-    
-    final data = lastYorum.data() as Map<String, dynamic>;
-    final timerEnd = data['timerEnd'] as Timestamp;
-    final isTimerActive = data['isTimerActive'] as bool;
-    
-    if (!isTimerActive) {
-      _remainingTime = 0;
-      return;
-    }
-
-    final now = DateTime.now();
-    final endTime = timerEnd.toDate();
-    _remainingTime = endTime.difference(now).inSeconds;
-
-    if (_remainingTime <= 0) {
-      _updateTimerStatus(lastYorum.id);
-      _remainingTime = 0;
-      return;
-    }
-
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingTime > 0) {
-          _remainingTime--;
-        } else {
-          timer.cancel();
-          _updateTimerStatus(lastYorum.id);
-        }
-      });
-    });
-  }
-
-  Future<void> _updateTimerStatus(String yorumId) async {
-    try {
-      final userEmail = _auth.currentUser?.email;
-      if (userEmail == null) return;
-
-      await _firestore
-          .collection('users')
-          .doc(userEmail)
-          .collection('yorumlar')
-          .doc(yorumId)
-          .update({
-        'isTimerActive': false
-      });
-    } catch (e) {
-      print('Timer durumu güncellenirken hata: $e');
-    }
-  }
-
-  Future<void> _getYorumlar() async {
-    if (!_hasMore || _isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final userEmail = _auth.currentUser?.email;
-      if (userEmail == null) return;
-
-      Query query = _firestore
-          .collection('users')
-          .doc(userEmail)
-          .collection('yorumlar')
-          .orderBy('tarih', descending: true)
-          .limit(_limit);
-
-      if (_lastDocument != null) {
-        query = query.startAfterDocument(_lastDocument!);
-      }
-
-      final querySnapshot = await query.get();
-      
-      if (querySnapshot.docs.length < _limit) {
-        _hasMore = false;
-      }
-
-      if (querySnapshot.docs.isNotEmpty) {
-        _lastDocument = querySnapshot.docs.last;
-        _yorumlar.addAll(querySnapshot.docs);
-        
-        // Sadece en son yorum için timer'ı başlat
-        if (_yorumlar.isNotEmpty) {
-          _startTimer(_yorumlar.first);
-        }
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Veri çekme hatası: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  int _selectedIndex = 1; // Yorumlarım seçili
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == _selectedIndex) return;
+    
+    Widget page;
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+        break;
+      case 1:
+        // Zaten Yorumlarım sayfasındayız, bir şey yapmaya gerek yok
+        break;
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Dream()),
+        );
+        break;
+    }
   }
 
   @override
@@ -168,138 +57,214 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
         ),
         child: Column(
           children: [
+            // Başlık
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Rüya Yorumların',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Geçmiş rüya yorumlarını burada görebilirsin',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Yorumlar Listesi
             Expanded(
-              child: _yorumlar.isEmpty && !_isLoading
-                  ? Center(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _firestore
+                    .collection('users')
+                    .doc(_auth.currentUser?.email)
+                    .collection('yorumlar')
+                    .orderBy('tarih', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(
                       child: Text(
-                        'Henüz yorum yapılmış rüya bulunmuyor',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        'Bir hata oluştu',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.all(16),
-                      itemCount: _yorumlar.length + (_hasMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _yorumlar.length) {
-                          return _buildLoadMoreButton();
-                        }
+                    );
+                  }
 
-                        final doc = _yorumlar[index];
-                        final data = doc.data() as Map<String, dynamic>;
-                        final timestamp = data['tarih'] as Timestamp;
-                        final formattedDate = '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}';
-                        final isTimerActive = data['isTimerActive'] as bool;
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    );
+                  }
 
-                        return GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => Dialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.all(16.0),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [Color(0xFF1d0042), Color(0xFF644092)],
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                    ),
-                                    borderRadius: BorderRadius.circular(20.0),
-                                  ),
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Rüya Yorumu',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: 20),
-                                        Card(
-                                          color: Colors.white.withOpacity(0.9),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(15),
-                                          ),
-                                          child: Padding(
-                                            padding: EdgeInsets.all(16.0),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Rüyan:',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 8),
-                                                Text(
-                                                  data['ruya'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 16),
-                                                Text(
-                                                  'Yorum:',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 8),
-                                                Text(
-                                                  data['yorum'] ?? '',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(height: 16),
-                                        ElevatedButton(
-                                          onPressed: () => Navigator.of(context).pop(),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xFF6602ad),
-                                            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Kapat',
-                                            style: TextStyle(color: Colors.white),
-                                          ),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.nights_stay_outlined,
+                            size: 64,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Henüz rüya yorumun bulunmuyor',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      var doc = snapshot.data!.docs[index];
+                      var data = doc.data() as Map<String, dynamic>;
+                      var tarih = (data['tarih'] as Timestamp).toDate();
+                      var formattedDate = DateFormat('dd.MM.yyyy HH:mm').format(tarih);
+
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF783FA6).withOpacity(0.15),
+                              Color(0xFF644092).withOpacity(0.25),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 15,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => Dialog(
+                                  backgroundColor: Colors.transparent,
+                                  child: Container(
+                                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFF1d0042).withOpacity(0.95),
+                                          Color(0xFF644092).withOpacity(0.95),
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.4),
+                                          blurRadius: 25,
+                                          offset: Offset(0, 15),
                                         ),
                                       ],
                                     ),
+                                    child: SingleChildScrollView(
+                                      padding: EdgeInsets.all(24),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Rüya Yorumu',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.close, color: Colors.white),
+                                                onPressed: () => Navigator.pop(context),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 16),
+                                          Text(
+                                            'Rüyan:',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.8),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            data['ruya'] ?? '',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.7),
+                                              fontSize: 14,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                          SizedBox(height: 24),
+                                          Text(
+                                            'Yorumu:',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.8),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            data['yorum'] ?? '',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            margin: EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 1,
-                              ),
-                            ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(20),
                             child: Padding(
                               padding: EdgeInsets.all(16),
                               child: Column(
@@ -308,28 +273,28 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        formattedDate,
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.7),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      if (index == 0 && isTimerActive && _remainingTime > 0)
-                                        Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(15),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.nights_stay_rounded,
+                                            color: Colors.white,
+                                            size: 20,
                                           ),
-                                          child: Text(
-                                            _formatTime(_remainingTime),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            formattedDate,
                                             style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white.withOpacity(0.8),
+                                              fontSize: 14,
                                             ),
                                           ),
-                                        ),
+                                        ],
+                                      ),
+                                      Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        color: Colors.white.withOpacity(0.5),
+                                        size: 16,
+                                      ),
                                     ],
                                   ),
                                   SizedBox(height: 12),
@@ -338,17 +303,21 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 16,
                                       color: Colors.white,
+                                      fontSize: 14,
+                                      height: 1.5,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -356,51 +325,6 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
-      ),
-    );
-  }
-
-  Widget _buildLoadMoreButton() {
-    if (_isLoading) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        ),
-      );
-    }
-
-    if (!_hasMore) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Başka yorum bulunmuyor',
-            style: TextStyle(color: Colors.white70),
-          ),
-        ),
-      );
-    }
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: ElevatedButton(
-          onPressed: _getYorumlar,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF6602ad),
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: Text(
-            'Daha Fazla Yükle',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
       ),
     );
   }
