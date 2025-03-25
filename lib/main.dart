@@ -10,34 +10,15 @@ import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:dream_app_flutter/providers/user_provider.dart';
 import 'package:flutter/foundation.dart';
+import 'package:dream_app_flutter/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Debug loglarını kapat
-  if (!kDebugMode) {
-    debugPrint = (String? message, {int? wrapWidth}) {};
-  }
-
-  // MESA loglarını kapat
-  debugPrintBuildScope = false;
-  
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  await Firebase.initializeApp();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -45,13 +26,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
-        title: 'Rüya Yorumu',
+        title: 'Rüya Yorumları',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.purple,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+          primaryColor: Color(0xFF6602ad),
+          scaffoldBackgroundColor: Color(0xFF1d0042),
+          colorScheme: ColorScheme.dark(
+            primary: Color(0xFF6602ad),
+            secondary: Color(0xFF8b64bd),
+          ),
         ),
-        home: HomePage(),
+        home: SplashScreen(),
       ),
     );
   }

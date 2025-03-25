@@ -358,6 +358,20 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                             alignLabelWithHint: true,
                           ),
                         ),
+                        if (_isListening)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withOpacity(0.3),
+                              child: Center(
+                                child: Lottie.asset(
+                                  'assets/gif/mic.json',
+                                  width: 150,
+                                  height: 150,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
                         Positioned(
                           right: 0,
                           bottom: 0,
