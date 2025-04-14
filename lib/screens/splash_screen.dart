@@ -21,11 +21,13 @@ class _SplashScreenState extends State<SplashScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _referralCodeController = TextEditingController();
+  final _birthPlaceController = TextEditingController();
   
   bool _isLogin = false;
   bool _isLoading = false;
   String? _gender;
   DateTime? _birthDate;
+  TimeOfDay? _birthTime;
   int _currentStep = 0;
   String? _referrerEmail;
 
@@ -90,37 +92,39 @@ class _SplashScreenState extends State<SplashScreen> {
                     child: Column(
                       children: [
                         if (_currentStep == 0) ...[
-                          // Referans kodu alanı
-                          TextFormField(
-                            controller: _referralCodeController,
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: isSmallScreen ? 12 : 16,
-                              ),
-                              hintText: 'Referans Kodu (Opsiyonel)',
-                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                              prefixIcon: Icon(Icons.card_giftcard, color: Colors.white),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.white),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.red),
-                              ),
-                              focusedErrorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide(color: Colors.red),
+                          if (!_isLogin) ...[
+                            // Referans kodu alanı
+                            TextFormField(
+                              controller: _referralCodeController,
+                              style: TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: isSmallScreen ? 12 : 16,
+                                ),
+                                hintText: 'Referans Kodu (Opsiyonel)',
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                prefixIcon: Icon(Icons.card_giftcard, color: Colors.white),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide(color: Colors.white),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide(color: Colors.red),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide(color: Colors.red),
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 12 : 16),
+                            SizedBox(height: isSmallScreen ? 12 : 16),
+                          ],
                           // E-posta alanı
                           TextFormField(
                             controller: _emailController,
@@ -301,29 +305,163 @@ class _SplashScreenState extends State<SplashScreen> {
                         if (_currentStep == 3) ...[
                           // Doğum tarihi seçimi
                           InkWell(
-                            onTap: () => _selectDate(context),
+                            onTap: () async {
+                              final DateTime? picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime.now(),
+                                locale: const Locale('tr', 'TR'),
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: ThemeData.dark().copyWith(
+                                      colorScheme: ColorScheme.dark(
+                                        primary: Color(0xFF6602ad),
+                                        onPrimary: Colors.white,
+                                        surface: Color(0xFF1d0042),
+                                        onSurface: Colors.white,
+                                      ),
+                                      dialogBackgroundColor: Color(0xFF1d0042),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  _birthDate = picked;
+                                });
+                              }
+                            },
                             child: Container(
-                              padding: EdgeInsets.all(16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: isSmallScreen ? 12 : 16,
+                              ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: _birthDate != null
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.3),
                                 ),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 16),
                                   Text(
-                                    _birthDate == null
-                                        ? 'Doğum Tarihi Seç'
-                                        : DateFormat('dd.MM.yyyy').format(_birthDate!),
+                                    _birthDate != null
+                                        ? DateFormat('dd.MM.yyyy', 'tr_TR').format(_birthDate!)
+                                        : 'Doğum Tarihi',
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                                      color: _birthDate != null
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.5),
                                     ),
                                   ),
-                                  Icon(Icons.calendar_today, color: Colors.white),
                                 ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: isSmallScreen ? 12 : 16),
+                          // Doğum saati seçimi
+                          InkWell(
+                            onTap: () async {
+                              final TimeOfDay? picked = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: ThemeData.dark().copyWith(
+                                      colorScheme: ColorScheme.dark(
+                                        primary: Color(0xFF6602ad),
+                                        onPrimary: Colors.white,
+                                        surface: Color(0xFF1d0042),
+                                        onSurface: Colors.white,
+                                      ),
+                                      dialogBackgroundColor: Color(0xFF1d0042),
+                                    ),
+                                    child: MediaQuery(
+                                      data: MediaQuery.of(context).copyWith(
+                                        alwaysUse24HourFormat: true,
+                                      ),
+                                      child: child!,
+                                    ),
+                                  );
+                                },
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  _birthTime = picked;
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: isSmallScreen ? 12 : 16,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: _birthTime != null
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.3),
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 16),
+                                  Text(
+                                    _birthTime != null
+                                        ? _birthTime!.format(context).replaceAll('AM', '').replaceAll('PM', '').trim()
+                                        : 'Doğum Saati (Opsiyonel)',
+                                    style: TextStyle(
+                                      color: _birthTime != null
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: isSmallScreen ? 12 : 16),
+                          // Doğum yeri
+                          TextFormField(
+                            controller: _birthPlaceController,
+                            style: TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: isSmallScreen ? 12 : 16,
+                              ),
+                              hintText: 'Doğum Yeri (Opsiyonel)',
+                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                              prefixIcon: Icon(Icons.location_on, color: Colors.white),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Colors.white),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Colors.red),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(color: Colors.red),
                               ),
                             ),
                           ),
@@ -423,34 +561,6 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().subtract(Duration(days: 365 * 18)),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: Color(0xFF6602ad),
-              onPrimary: Colors.white,
-              surface: Color(0xFF1d0042),
-              onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: Color(0xFF1d0042),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _birthDate = picked;
-      });
-    }
   }
 
   String _getButtonText() {
@@ -555,6 +665,8 @@ class _SplashScreenState extends State<SplashScreen> {
             'last_name': _lastNameController.text,
             'gender': _gender,
             'dg': DateFormat('dd.MM.yyyy').format(_birthDate!),
+            'birth_time': _birthTime != null ? _birthTime!.format(context) : null,
+            'birth_place': _birthPlaceController.text.isNotEmpty ? _birthPlaceController.text : null,
             'coin': 100,
             'dreamCount': 0,
             'spentCoins': 0,

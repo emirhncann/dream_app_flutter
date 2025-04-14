@@ -11,10 +11,13 @@ import 'package:provider/provider.dart';
 import 'package:dream_app_flutter/providers/user_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dream_app_flutter/screens/splash_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyApp());
 }
 
@@ -36,6 +39,15 @@ class MyApp extends StatelessWidget {
             secondary: Color(0xFF8b64bd),
           ),
         ),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('tr', 'TR'),
+        ],
+        locale: const Locale('tr', 'TR'),
         home: SplashScreen(),
       ),
     );

@@ -36,6 +36,7 @@ class _DreamState extends State<Dream> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   bool _isSpeechEnabled = false;
+  bool _showAnimation = false;
 
   @override
   void initState() {
@@ -126,10 +127,12 @@ class _DreamState extends State<Dream> {
         cancelOnError: true,
       )) {
         setState(() => _isListening = true);
+        _showAnimation = true;
       }
     } else {
       setState(() => _isListening = false);
       _speech.stop();
+      _showAnimation = false;
     }
   }
 
@@ -220,12 +223,15 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
       }
 
       try {
-        // Firestore'a kaydet
-        await _firestore.collection('users').doc(userEmail).set({
-          'email': userEmail,
-          'lastUpdated': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        // Şu anki zamanı al
+        DateTime now = DateTime.now();
+        // 5 dakika sonrasını hesapla
+        DateTime timerEnd = now.add(Duration(minutes: 5));
 
+        final userEmail = _auth.currentUser?.email;
+        if (userEmail == null) throw Exception('Kullanıcı oturumu bulunamadı.');
+
+        // Firestore'a kaydet
         await _firestore
             .collection('users')
             .doc(userEmail)
@@ -234,12 +240,11 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
           'ruya': dreamText,
           'yorum': response.text,
           'tarih': FieldValue.serverTimestamp(),
-          'yorumcu': 'Saniye Abla',
-          'userName': userName,
-          'userGender': userGender,
+          'isTimerActive': true,
+          'timerEnd': Timestamp.fromDate(timerEnd),
           'userBirthDate': userBirthDate,
-          'timerEnd': Timestamp.fromDate(DateTime.now().add(Duration(minutes: 3))), // 3 dakika sonrası için timestamp
-          'isTimerActive': true // Timer'ın aktif olup olmadığını belirten flag
+          'userGender': userGender,
+          'userName': userName,
         });
 
         print('Yorum başarıyla kaydedildi');
@@ -485,6 +490,15 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                 child: CircularProgressIndicator(
                   color: Colors.white,
                 ),
+              ),
+            ),
+
+          if (_showAnimation)
+            Center(
+              child: Container(
+                width: 200,
+                height: 200,
+                child: Lottie.asset('assets/gif/ses.json'),
               ),
             ),
         ],

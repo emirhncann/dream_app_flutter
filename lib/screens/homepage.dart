@@ -287,7 +287,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           // İçerik
-                          Padding(
+                          Padding( 
                             padding: EdgeInsets.all(20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +298,7 @@ class _HomePageState extends State<HomePage> {
                                     Icon(Icons.stars, color: Colors.white, size: 28),
                                     SizedBox(width: 12),
                                     Text(
-                                      'Günlük Astroloji',
+                                      'Haftalık Astroloji',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 24,
