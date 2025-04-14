@@ -272,236 +272,235 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
 
     return Scaffold(
       appBar: CustomAppBar(),
-      body: Stack(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF1d0042),
-                  Color(0xFF8b64bd),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: SingleChildScrollView(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF2C1F63),
+              Color(0xFF1A1034),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Başlık
+            Container(
+              padding: EdgeInsets.fromLTRB(24, 40, 24, 20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-                  
-                  // Başlık ve açıklama
                   Text(
-                    "Rüyanı Anlat",
+                    'Rüyanı Anlat',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    "Rüyanı detaylı bir şekilde anlatırsan daha iyi bir yorum alabirsin",
-                    textAlign: TextAlign.center,
+                    'Rüyanı sesli veya yazılı olarak anlatabilirsin',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
+                      color: Colors.white70,
+                      fontSize: 16,
                     ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
-                  
-                  // Rüya yazma alanı
-                  Container(
-                    height: MediaQuery.of(context).size.height * 0.5,
-                    margin: EdgeInsets.symmetric(horizontal: 8),
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF783FA6).withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
-                        width: 1,
+                ],
+              ),
+            ),
+            
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Mikrofon Butonu
+                    if (!_isListening && dreamText.isEmpty)
+                      Container(
+                        margin: EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF3D2C8D),
+                              Color(0xFF1A1034),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _toggleListening(context),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.mic,
+                                    color: Colors.white,
+                                    size: 48,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'Rüyanı Sesli Anlat',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Mikrofona dokun ve rüyanı anlatmaya başla',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        TextField(
-                          maxLines: null,
-                          maxLength: maxLength,
-                          onChanged: (text) {
-                            setState(() {
-                              dreamText = text;
-                            });
-                          },
-                          controller: TextEditingController(text: dreamText)..selection = TextSelection.fromPosition(
-                            TextPosition(offset: dreamText.length),
+
+                    // Dinleme Animasyonu
+                    if (_isListening)
+                      Container(
+                        margin: EdgeInsets.only(bottom: 24),
+                        padding: EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF3D2C8D),
+                              Color(0xFF1A1034),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          textAlign: TextAlign.left,
-                          textDirection: TextDirection.ltr,
-                          style: TextStyle(
-                            color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Lottie.asset(
+                              'assets/gif/mic.json',
+                              width: 150,
+                              height: 150,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Seni Dinliyorum...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Metin Alanı
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF3D2C8D),
+                            Color(0xFF1A1034),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        maxLines: 8,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Rüyanı buraya yazabilirsin...',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
                             fontSize: 16,
-                            height: 1.5,
                           ),
-                          decoration: InputDecoration(
-                            hintText: "Rüyanı buraya yaz...",
-                            hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 16,
-                            ),
-                            border: InputBorder.none,
-                            counterText: "",
-                            alignLabelWithHint: true,
+                          contentPadding: EdgeInsets.all(20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
                           ),
+                          filled: true,
+                          fillColor: Colors.transparent,
                         ),
-                        if (_isListening)
-                          Positioned.fill(
-                            child: Container(
-                              color: Colors.black.withOpacity(0.3),
-                              child: Center(
-                                child: Lottie.asset(
-                                  'assets/gif/mic.json',
-                                  width: 150,
-                                  height: 150,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
+                      ),
+                    ),
+
+                    // Gönder Butonu
+                    if (dreamText.isNotEmpty || dreamText.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 24),
+                        child: ElevatedButton(
+                          onPressed: _submitDream,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Color(0xFF2C1F63),
+                            minimumSize: Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
+                            elevation: 0,
                           ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Mikrofon butonu
-                              Container(
-                                margin: EdgeInsets.only(right: 8),
-                                child: IconButton(
-                                  onPressed: () => _toggleListening(context),
-                                  icon: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Icon(
-                                        _isListening ? Icons.stop : Icons.mic,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                      if (!_isListening)
-                                        Positioned(
-                                          right: 0,
-                                          top: 0,
-                                          child: Container(
-                                            padding: EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: Color(0xFF6602ad),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Text(
-                                              '50',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Karakter sayacı
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Text(
-                                  "${dreamText.length}/$maxLength",
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.8),
-                                    fontSize: 12,
-                                  ),
+                              Icon(Icons.send_rounded),
+                              SizedBox(width: 8),
+                              Text(
+                                'Rüyamı Yorumla',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.04),
-
-                  // Yorumlat butonu
-                  Container(
-                    width: double.infinity,
-                    margin: EdgeInsets.symmetric(horizontal: 8),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        yorumla(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Color(0xFF6602ad),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 5,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.auto_awesome, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            "Rüyanı Yorumlat",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.08),
-                ],
-              ),
-            ),
-          ),
-
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
+                  ],
                 ),
               ),
             ),
-
-          if (_showAnimation)
-            Center(
-              child: Container(
-                width: 200,
-                height: 200,
-                child: Lottie.asset('assets/gif/ses.json'),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
@@ -510,119 +509,118 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
     );
   }
 
-void yorumla(BuildContext context) async {
-  if (dreamText.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Lütfen önce rüyanızı yazın.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  // Coin kontrolü
-  final userProvider = Provider.of<UserProvider>(context, listen: false);
-  if (userProvider.coins < 50) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Yetersiz coin! Rüya yorumlatmak için 50 coin gerekiyor.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  setState(() {
-    _isLoading = true;
-  });
-
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext dialogContext) {
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        child: Container(
-          padding: EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1d0042), Color(0xFF644092)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(20.0),
-            image: DecorationImage(
-              image: AssetImage('assets/images/dream_bg.png'),
-              fit: BoxFit.cover,
-              opacity: 0.2,
-            ),
-          ),
-          height: 300,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/gif/bulut.json',
-                width: 200,
-                height: 200,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Rüyanız yorumlanıyor...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
+  void _submitDream() async {
+    if (dreamText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lütfen önce rüyanızı yazın.'),
+          backgroundColor: Colors.red,
         ),
       );
-    },
-  );
+      return;
+    }
 
-  try {
-    String interpretation = await _interpretDream(dreamText);
-    
-    // Yorumlama başarılı olduktan sonra coini düş
-    await userProvider.deductCoins(50);
-    
+    // Coin kontrolü
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.coins < 50) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Yetersiz coin! Rüya yorumlatmak için 50 coin gerekiyor.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
-      _isLoading = false;
+      _isLoading = true;
     });
-    
-    Navigator.pop(context); // Loading dialogu kapat
-    
-    // Başarılı mesajı göster ve yorumlar sayfasına yönlendir
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Rüyanız başarıyla yorumlandı!'),
-        backgroundColor: Colors.green,
-      ),
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1d0042), Color(0xFF644092)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(20.0),
+              image: DecorationImage(
+                image: AssetImage('assets/images/dream_bg.png'),
+                fit: BoxFit.cover,
+                opacity: 0.2,
+              ),
+            ),
+            height: 300,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  'assets/gif/bulut.json',
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Rüyanız yorumlanıyor...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
-    
-    // Yorumlar sayfasına yönlendir
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => DreamInterpretations()),
-    );
-  } catch (error) {
-    setState(() {
-      _isLoading = false;
-    });
-    Navigator.pop(context); // Loading dialogu kapat
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(error.toString().replaceAll('Exception: ', '')),
-        backgroundColor: Colors.red,
-      ),
-    );
+
+    try {
+      String interpretation = await _interpretDream(dreamText);
+      
+      // Yorumlama başarılı olduktan sonra coini düş
+      await userProvider.deductCoins(50);
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      Navigator.pop(context); // Loading dialogu kapat
+      
+      // Başarılı mesajı göster ve yorumlar sayfasına yönlendir
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Rüyanız başarıyla yorumlandı!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Yorumlar sayfasına yönlendir
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => DreamInterpretations()),
+      );
+    } catch (error) {
+      setState(() {
+        _isLoading = false;
+      });
+      Navigator.pop(context); // Loading dialogu kapat
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-}
-
 }

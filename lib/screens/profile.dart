@@ -186,12 +186,18 @@ class _ProfileState extends State<Profile> {
                               title: 'Coin Bakiyesi',
                               value: '${userProvider.coins} Coin',
                             ),
+                            Divider(color: Colors.white.withOpacity(0.1), height: 30),
+                            _buildInfoRow(
+                              icon: Icons.card_giftcard,
+                              title: 'Davet Kodu',
+                              value: userProvider.inviteCode ?? 'Kod oluşturuluyor...',
+                            ),
                           ],
                         ),
                       ),
                       SizedBox(height: 20),
 
-                      // İstatistikler
+                      // Coin Kazanma Bilgileri
                       Container(
                         padding: EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -213,7 +219,7 @@ class _ProfileState extends State<Profile> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'İstatistikler',
+                              'Coin Kazanma Yolları',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -221,24 +227,49 @@ class _ProfileState extends State<Profile> {
                               ),
                             ),
                             SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildStatItem(
-                                  icon: Icons.nights_stay,
-                                  title: 'Yorumlanan\nRüya',
-                                  value: '${userProvider.dreamCount ?? 0}',
-                                ),
-                                _buildStatItem(
-                                  icon: Icons.stars,
-                                  title: 'Toplam\nHarcanan Coin',
-                                  value: '${userProvider.spentCoins ?? 0}',
-                                ),
-                              ],
+                            _buildCoinInfoRow(
+                              icon: Icons.person_add,
+                              title: 'Arkadaşını Davet Et',
+                              value: '+100 Coin',
+                            ),
+                            SizedBox(height: 16),
+                            _buildCoinInfoRow(
+                              icon: Icons.share,
+                              title: 'Uygulamayı Paylaş',
+                              value: '+15 Coin',
+                            ),
+                            SizedBox(height: 16),
+                            _buildCoinInfoRow(
+                              icon: Icons.photo_camera,
+                              title: 'Instagram Hesabını Takip Et',
+                              value: '+30 Coin',
                             ),
                           ],
                         ),
                       ),
+                      SizedBox(height: 20),
+
+                      // Çıkış Yap Butonu
+                      ElevatedButton(
+                        onPressed: () {
+                          // Çıkış yapma işlemi
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.withOpacity(0.8),
+                          minimumSize: Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Çıkış Yap',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -299,41 +330,41 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildStatItem({
+  Widget _buildCoinInfoRow({
     required IconData icon,
     required String title,
     required String value,
   }) {
-    return Column(
+    return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(12),
+          padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             icon,
-            color: Colors.white,
-            size: 24,
+            color: Colors.amber,
+            size: 20,
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+        ),
         Text(
           value,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
+            color: Colors.amber,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
-            fontSize: 12,
           ),
         ),
       ],

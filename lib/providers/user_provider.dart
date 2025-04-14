@@ -17,6 +17,7 @@ class UserProvider with ChangeNotifier {
   int _dreamCount = 0;
   int _spentCoins = 0;
   bool _isLoggedIn = false;
+  String? _inviteCode;
 
   String? get firstName => _firstName;
   String? get lastName => _lastName;
@@ -27,6 +28,7 @@ class UserProvider with ChangeNotifier {
   int get dreamCount => _dreamCount;
   int get spentCoins => _spentCoins;
   bool get isLoggedIn => _isLoggedIn;
+  String? get inviteCode => _inviteCode;
 
   UserProvider() {
     _setupUserDataListener();
@@ -53,6 +55,7 @@ class UserProvider with ChangeNotifier {
           _spentCoins = data['spentCoins'] ?? 0;
           _isLoggedIn = true;
           _email = user.email;
+          _inviteCode = data['invite_code'] as String?;
 
           print('User Data Updated:'); // Debug için
           print('First Name: $_firstName');
@@ -62,6 +65,7 @@ class UserProvider with ChangeNotifier {
           print('Coins: $_coins');
           print('Dream Count: $_dreamCount');
           print('Spent Coins: $_spentCoins');
+          print('Invite Code: $_inviteCode');
 
           notifyListeners();
         }
@@ -163,6 +167,7 @@ class UserProvider with ChangeNotifier {
           _dreamCount = data['dreamCount'] ?? 0;
           _spentCoins = data['spentCoins'] ?? 0;
           _isLoggedIn = true;
+          _inviteCode = data['invite_code'] as String?;
           
           print('Loaded User Data:'); // Debug için yüklenen verileri yazdır
           print('First Name: $_firstName');
@@ -172,6 +177,7 @@ class UserProvider with ChangeNotifier {
           print('Coins: $_coins');
           print('Dream Count: $_dreamCount');
           print('Spent Coins: $_spentCoins');
+          print('Invite Code: $_inviteCode');
           
           notifyListeners();
         } else {

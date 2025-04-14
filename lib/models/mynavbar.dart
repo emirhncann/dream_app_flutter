@@ -4,31 +4,47 @@ class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
 
-  const CustomBottomNavBar({
-    Key? key,
+  CustomBottomNavBar({
     required this.selectedIndex,
     required this.onItemTapped,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF1d0042), Color(0xFF644092)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          colors: [
+            Color(0xFF1A1034),
+            Color(0xFF2C1F63),
+          ],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: Offset(0, -2),
           ),
         ],
       ),
       child: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
+        currentIndex: selectedIndex,
+        onTap: onItemTapped,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(0.5),
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12,
+        ),
+        items: [
           BottomNavigationBarItem(
             icon: Container(
               padding: EdgeInsets.all(8),
@@ -63,20 +79,6 @@ class CustomBottomNavBar extends StatelessWidget {
             label: 'Profil',
           ),
         ],
-        currentIndex: selectedIndex,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white.withOpacity(0.5),
-        backgroundColor: Colors.transparent,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 12,
-        ),
-        elevation: 0,
-        onTap: onItemTapped,
       ),
     );
   }
