@@ -137,7 +137,9 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 'Saniye Abla\'ya Hoşgeldin ${_firstName.isNotEmpty ? _firstName : 'Canım'}',
+                textAlign: TextAlign.center,
                 style: TextStyle(
+                  
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -365,7 +367,7 @@ class _HomePageState extends State<HomePage> {
                         TextButton.icon(
                           onPressed: () {
                             // Coin satın alma işlemi
-                          },
+                          }, 
                           icon: Icon(
                             Icons.add_circle_outline,
                             color: Colors.amber,

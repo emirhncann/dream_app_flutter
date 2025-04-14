@@ -27,6 +27,7 @@ class _DreamState extends State<Dream> {
   int maxLength = 1000; // Karakter sınırı
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _dreamController = TextEditingController();
 
   // Gemini API için model
   late GenerativeModel _model;
@@ -80,6 +81,17 @@ class _DreamState extends State<Dream> {
 
   // Ses kaydını başlat/durdur
   Future<void> _toggleListening(BuildContext context) async {
+    final user = _auth.currentUser;
+    if (user?.email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lütfen önce giriş yapın.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (!_isSpeechEnabled) {
       // İzin kontrolü
       _isSpeechEnabled = await _speech.initialize(
@@ -126,13 +138,17 @@ class _DreamState extends State<Dream> {
         localeId: 'tr_TR',
         cancelOnError: true,
       )) {
-        setState(() => _isListening = true);
-        _showAnimation = true;
+        setState(() {
+          _isListening = true;
+          _showAnimation = true;
+        });
       }
     } else {
-      setState(() => _isListening = false);
+      setState(() {
+        _isListening = false;
+        _showAnimation = false;
+      });
       _speech.stop();
-      _showAnimation = false;
     }
   }
 
@@ -152,9 +168,7 @@ class _DreamState extends State<Dream> {
           MaterialPageRoute(builder: (context) => DreamInterpretations()),
         );
         break;
-      case 2:
-        // Zaten Profil sayfasındayız
-        break;
+     
     }
   }
 
@@ -162,18 +176,21 @@ class _DreamState extends State<Dream> {
   Future<String> _interpretDream(String dreamText) async {
     try {
       // Kullanıcı bilgilerini al
-      final userEmail = _auth.currentUser?.email;
-      if (userEmail == null) {
+      final user = _auth.currentUser;
+      if (user?.email == null) {
         throw Exception('Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.');
       }
 
       // Kullanıcının detay bilgilerini al
-      final userDoc = await _firestore.collection('users').doc(userEmail).get();
+      final userDoc = await _firestore.collection('users').doc(user!.email).get();
+      if (!userDoc.exists) {
+        throw Exception('Kullanıcı bilgileri bulunamadı.');
+      }
+
       final userData = userDoc.data() ?? {};
       final userName = userData['first_name'] ?? 'Canım';
       final userGender = userData['gender'] ?? '';
       final userBirthDate = userData['dg'] ?? '';
-      final hitap = userGender.toLowerCase() == 'kadın' ? 'canım' : 'yakışıklı';
 
       // Önce API'den yanıt alalım
       final prompt = '''
@@ -228,13 +245,10 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
         // 5 dakika sonrasını hesapla
         DateTime timerEnd = now.add(Duration(minutes: 5));
 
-        final userEmail = _auth.currentUser?.email;
-        if (userEmail == null) throw Exception('Kullanıcı oturumu bulunamadı.');
-
         // Firestore'a kaydet
         await _firestore
             .collection('users')
-            .doc(userEmail)
+            .doc(user.email)
             .collection('yorumlar')
             .add({
           'ruya': dreamText,
@@ -281,6 +295,7 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            stops: [0.0, 0.8],
           ),
         ),
         child: Column(
@@ -295,17 +310,25 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                     'Rüyanı Anlat',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 12),
                   Text(
                     'Rüyanı sesli veya yazılı olarak anlatabilirsin',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
@@ -324,8 +347,8 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Color(0xFF3D2C8D),
-                              Color(0xFF1A1034),
+                              Color(0xFF5D4B9E),
+                              Color(0xFF2A1B4C),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -386,8 +409,8 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Color(0xFF3D2C8D),
-                              Color(0xFF1A1034),
+                              Color(0xFF5D4B9E),
+                              Color(0xFF2A1B4C),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -426,75 +449,144 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xFF3D2C8D),
-                            Color(0xFF1A1034),
+                            Color(0xFF5D4B9E).withOpacity(0.8),
+                            Color(0xFF2A1B4C).withOpacity(0.8),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
+                            blurRadius: 12,
+                            offset: Offset(0, 6),
                           ),
                         ],
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                          width: 1,
+                        ),
                       ),
                       child: TextField(
+                        controller: _dreamController,
+                        onChanged: (value) {
+                          setState(() {
+                            dreamText = value;
+                          });
+                        },
                         maxLines: 8,
+                        maxLength: maxLength,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
+                          letterSpacing: 0.3,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Rüyanı buraya yazabilirsin...',
                           hintStyle: TextStyle(
                             color: Colors.white.withOpacity(0.5),
                             fontSize: 16,
+                            letterSpacing: 0.3,
                           ),
-                          contentPadding: EdgeInsets.all(20),
+                          contentPadding: EdgeInsets.all(24),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(20),
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
                           fillColor: Colors.transparent,
+                          counterStyle: TextStyle(
+                            color: Colors.white70,
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
                     ),
 
                     // Gönder Butonu
-                    if (dreamText.isNotEmpty || dreamText.isNotEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(top: 24),
-                        child: ElevatedButton(
-                          onPressed: _submitDream,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Color(0xFF2C1F63),
-                            minimumSize: Size(double.infinity, 56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
+                    Container(
+                      margin: EdgeInsets.only(top: 32),
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_dreamController.text.isNotEmpty) {
+                            setState(() {
+                              dreamText = _dreamController.text;
+                            });
+                            _submitDream();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Lütfen rüyanızı yazın'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF5D4B9E),
+                          padding: EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.send_rounded),
-                              SizedBox(width: 8),
-                              Text(
-                                'Rüyamı Yorumla',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                          elevation: 6,
+                          shadowColor: Colors.black.withOpacity(0.3),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Rüyamı Yorumla',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                  width: 1,
                                 ),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.monetization_on,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    '50',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),

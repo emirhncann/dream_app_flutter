@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'dart:math';
 
 class UserProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -146,46 +147,92 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _loadUserData() async {
     try {
-      final user = _auth.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        _email = user.email;
-        
-        final userData = await _firestore
+        final doc = await FirebaseFirestore.instance
             .collection('users')
-            .doc(user.email)
+            .doc(user.uid)
             .get();
 
-        if (userData.exists) {
-          final data = userData.data() as Map<String, dynamic>;
-          print('Firestore Data: $data'); // Debug için veriyi yazdır
-          
-          _firstName = data['first_name'];
-          _lastName = data['last_name'];
-          _birthDate = data['dg'];
-          _gender = data['gender'];
-          _coins = data['coin'] ?? 0;
-          _dreamCount = data['dreamCount'] ?? 0;
-          _spentCoins = data['spentCoins'] ?? 0;
-          _isLoggedIn = true;
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          _firstName = data['first_name'] as String?;
+          _lastName = data['last_name'] as String?;
+          _email = data['email'] as String?;
+          _gender = data['gender'] as String?;
+          _birthDate = data['birth_date'] as String?;
+          _coins = data['coins'] as int? ?? 0;
           _inviteCode = data['invite_code'] as String?;
+          _dreamCount = data['dream_count'] as int? ?? 0;
+          _spentCoins = data['spent_coins'] as int? ?? 0;
           
-          print('Loaded User Data:'); // Debug için yüklenen verileri yazdır
-          print('First Name: $_firstName');
-          print('Last Name: $_lastName');
-          print('Birth Date: $_birthDate');
-          print('Gender: $_gender');
-          print('Coins: $_coins');
-          print('Dream Count: $_dreamCount');
-          print('Spent Coins: $_spentCoins');
-          print('Invite Code: $_inviteCode');
+          // Eğer davet kodu yoksa oluştur
+          if (_inviteCode == null) {
+            await _generateInviteCode(user.uid);
+          }
           
           notifyListeners();
-        } else {
-          print('User document does not exist in Firestore');
         }
       }
     } catch (e) {
       print('Kullanıcı verileri yüklenirken hata oluştu: $e');
+    }
+  }
+
+  // Davet kodu oluşturma
+  Future<void> _generateInviteCode(String userId) async {
+    try {
+      // Benzersiz bir davet kodu oluştur (8 haneli)
+      final random = Random();
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      final code = List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+      
+      // Firestore'a kaydet
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'invite_code': code,
+        'invite_code_created_at': FieldValue.serverTimestamp(),
+      });
+      
+      _inviteCode = code;
+      notifyListeners();
+      
+      print('Yeni davet kodu oluşturuldu: $code');
+    } catch (e) {
+      print('Davet kodu oluşturulurken hata oluştu: $e');
+    }
+  }
+
+  // Davet kodunu kullanma
+  Future<bool> useInviteCode(String code) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return false;
+
+      // Davet kodunu kullanan kullanıcının bilgilerini güncelle
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'used_invite_code': code,
+        'coins': FieldValue.increment(100), // Davet kodu kullanana 100 coin ver
+      });
+
+      // Davet kodunu oluşturan kullanıcıya da 100 coin ver
+      final inviterQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('invite_code', isEqualTo: code)
+          .get();
+
+      if (inviterQuery.docs.isNotEmpty) {
+        final inviterId = inviterQuery.docs.first.id;
+        await FirebaseFirestore.instance.collection('users').doc(inviterId).update({
+          'coins': FieldValue.increment(100),
+        });
+      }
+
+      _coins += 100;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('Davet kodu kullanılırken hata oluştu: $e');
+      return false;
     }
   }
 

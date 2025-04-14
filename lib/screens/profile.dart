@@ -5,6 +5,8 @@ import 'package:dream_app_flutter/models/myappbar.dart';
 import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:dream_app_flutter/screens/homepage.dart';
 import 'package:dream_app_flutter/screens/dream_interpretations.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 class Profile extends StatefulWidget {
   @override
@@ -46,11 +48,16 @@ class _ProfileState extends State<Profile> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFF1d0042),
-                Color(0xFF8b64bd),
+                Color(0xFF2C1F63),
+                Color(0xFF1A1034),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
+            ),
+            image: DecorationImage(
+              image: AssetImage('assets/images/background_pattern.png'),
+              fit: BoxFit.cover,
+              opacity: 0.1,
             ),
           ),
           child: Consumer<UserProvider>(
@@ -191,6 +198,17 @@ class _ProfileState extends State<Profile> {
                               icon: Icons.card_giftcard,
                               title: 'Davet Kodu',
                               value: userProvider.inviteCode ?? 'Kod oluşturuluyor...',
+                              onTap: () {
+                                if (userProvider.inviteCode != null) {
+                                  Clipboard.setData(ClipboardData(text: userProvider.inviteCode!));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Davet kodu kopyalandı!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -289,44 +307,56 @@ class _ProfileState extends State<Profile> {
     required IconData icon,
     required String title,
     required String value,
-    Color? iconColor,
+    VoidCallback? onTap,
   }) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            color: iconColor ?? Colors.white,
-            size: 20,
-          ),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
         ),
-        SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
-                fontSize: 12,
+            Icon(
+              icon,
+              color: Colors.amber,
+              size: 24,
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
+            if (onTap != null)
+              Icon(
+                Icons.copy,
+                color: Colors.white.withOpacity(0.7),
+                size: 20,
               ),
-            ),
           ],
         ),
-      ],
+      ),
     );
   }
 
