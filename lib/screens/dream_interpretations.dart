@@ -7,6 +7,7 @@ import 'package:dream_app_flutter/models/mynavbar.dart';
 import 'package:dream_app_flutter/screens/homepage.dart';
 import 'package:dream_app_flutter/screens/dream.dart';
 import 'package:lottie/lottie.dart';
+import 'package:dream_app_flutter/screens/profile.dart';
 
 class DreamInterpretations extends StatefulWidget {
   @override
@@ -21,7 +22,6 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
   void _onItemTapped(int index) {
     if (index == _selectedIndex) return;
     
-    Widget page;
     switch (index) {
       case 0:
         Navigator.pushReplacement(
@@ -30,12 +30,15 @@ class _DreamInterpretationsState extends State<DreamInterpretations> {
         );
         break;
       case 1:
-        // Zaten Yorumlarım sayfasındayız, bir şey yapmaya gerek yok
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => DreamInterpretations()),
+        );
         break;
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Dream()),
+          MaterialPageRoute(builder: (context) => Profile()),
         );
         break;
     }

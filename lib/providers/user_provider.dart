@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:dream_app_flutter/config/price_config.dart';
 
 class UserProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -279,34 +280,115 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  // Coin miktarını güncelle
   Future<void> updateCoins(int amount) async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        final userDoc = await _firestore
-            .collection('users')
-            .doc(user.email)
-            .get();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-        if (userDoc.exists) {
-          int currentCoins = userDoc.data()?['coin'] ?? 0;
-          
-          // Firebase'de coin'i güncelle
-          await _firestore
-              .collection('users')
-              .doc(user.email)
-              .update({
-                'coin': currentCoins + amount,
-                'lastUpdated': FieldValue.serverTimestamp(),
-              });
-          
-          // Local state'i güncelle
-          _coins = currentCoins + amount;
-          notifyListeners();
-        }
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.email)
+          .update({'coins': amount});
+      
+      _coins = amount;
+      notifyListeners();
+    } catch (e) {
+      print('Coin güncelleme hatası: $e');
+    }
+  }
+
+  // Coin harca
+  Future<bool> spendCoins(int amount, String transactionType) async {
+    if (!PriceConfig.hasEnoughCoins(_coins, amount)) {
+      return false;
+    }
+
+    final newAmount = _coins - amount;
+    await updateCoins(newAmount);
+
+    // İşlem geçmişini kaydet
+    await _addCoinTransaction(
+      amount: -amount,
+      type: transactionType,
+      description: PriceConfig.TRANSACTION_DESCRIPTIONS[transactionType] ?? transactionType,
+    );
+
+    return true;
+  }
+
+  // Coin kazan
+  Future<void> earnCoins(int amount, String transactionType) async {
+    final newAmount = _coins + amount;
+    await updateCoins(newAmount);
+
+    // İşlem geçmişini kaydet
+    await _addCoinTransaction(
+      amount: amount,
+      type: transactionType,
+      description: PriceConfig.TRANSACTION_DESCRIPTIONS[transactionType] ?? transactionType,
+    );
+  }
+
+  // Coin işlem geçmişi ekle
+  Future<void> _addCoinTransaction({
+    required int amount,
+    required String type,
+    required String description,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.email)
+          .collection('coin_transactions')
+          .add({
+        'amount': amount,
+        'type': type,
+        'description': description,
+        'date': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('İşlem geçmişi kayıt hatası: $e');
+    }
+  }
+
+  // Yeni kullanıcı için başlangıç coinlerini ver
+  Future<void> initializeNewUserCoins() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await updateCoins(PriceConfig.INITIAL_COINS);
+      await _addCoinTransaction(
+        amount: PriceConfig.INITIAL_COINS,
+        type: 'initial_coins',
+        description: PriceConfig.TRANSACTION_DESCRIPTIONS['initial_coins']!,
+      );
+    } catch (e) {
+      print('Başlangıç coin hatası: $e');
+    }
+  }
+
+  // Mevcut coin miktarını yükle
+  Future<void> loadCoins() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.email)
+          .get();
+
+      if (doc.exists) {
+        _coins = doc.data()?['coins'] ?? 0;
+        notifyListeners();
       }
     } catch (e) {
-      print('Coin bakiyesi güncellenirken hata oluştu: $e');
+      print('Coin yükleme hatası: $e');
     }
   }
 

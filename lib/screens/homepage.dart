@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:dream_app_flutter/providers/user_provider.dart';
+import 'package:dream_app_flutter/screens/astrology.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -238,7 +239,12 @@ class _HomePageState extends State<HomePage> {
 
                   // Haftalık Astroloji Kartı
                   GestureDetector(
-                    onTap: () => _checkAndNavigate(context, 30, '/daily_astrology' as Widget),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Astrology()),
+                      );
+                    },
                     child: Container(
                       height: 150,
                       margin: EdgeInsets.only(bottom: 16),

@@ -45,36 +45,71 @@ class _DreamCommentsState extends State<DreamComments> {
     });
 
     try {
-      final userEmail = _auth.currentUser?.email;
-      if (userEmail == null) return;
+      final user = _auth.currentUser;
+      if (user?.email == null) {
+        throw Exception('Lütfen önce giriş yapın.');
+      }
 
-      QuerySnapshot querySnapshot = await _firestore
+      // Rüya yorumlarını yükle
+      final dreamsQuery = await _firestore
           .collection('users')
-          .doc(userEmail)
-          .collection('yorumlar')
-          .orderBy('tarih', descending: true)
+          .doc(user!.email)
+          .collection('dreams')
+          .orderBy('date', descending: true)
           .get();
 
+      // Astroloji yorumlarını yükle
+      final astrologyQuery = await _firestore
+          .collection('users')
+          .doc(user.email)
+          .collection('astrology')
+          .orderBy('date', descending: true)
+          .get();
+
+      final List<Map<String, dynamic>> allComments = [];
+
+      // Rüya yorumlarını ekle
+      for (var doc in dreamsQuery.docs) {
+        final data = doc.data();
+        allComments.add({
+          ...data,
+          'id': doc.id,
+          'type': 'dream',
+          'date': data['date'] as Timestamp,
+        });
+      }
+
+      // Astroloji yorumlarını ekle
+      for (var doc in astrologyQuery.docs) {
+        final data = doc.data();
+        allComments.add({
+          ...data,
+          'id': doc.id,
+          'type': 'astrology',
+          'date': data['date'] as Timestamp,
+          'reading': data['reading'] ?? '',
+        });
+      }
+
+      // Tüm yorumları tarihe göre sırala
+      allComments.sort((a, b) => (b['date'] as Timestamp).compareTo(a['date'] as Timestamp));
+
       setState(() {
-        _comments = querySnapshot.docs.map((doc) {
-          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-          final timerEnd = data['timerEnd'] as Timestamp;
-          _readyComments[doc.id] = DateTime.now().isAfter(timerEnd.toDate());
-          return {
-            'id': doc.id,
-            'dream': data['ruya'] ?? '',
-            'interpretation': data['yorum'] ?? '',
-            'timestamp': data['tarih'] ?? Timestamp.now(),
-            'timerEnd': timerEnd,
-          };
-        }).toList();
+        _comments = allComments;
         _isLoading = false;
       });
     } catch (e) {
-      print('Yorumlar yüklenirken hata: $e');
       setState(() {
         _isLoading = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -97,7 +132,7 @@ class _DreamCommentsState extends State<DreamComments> {
 
   void _startCommentTimer(String commentId) {
     final comment = _comments.firstWhere((c) => c['id'] == commentId);
-    final readyTime = (comment['timerEnd'] as Timestamp).toDate();
+    final readyTime = (comment['date'] as Timestamp).toDate();
     final remainingTime = readyTime.difference(DateTime.now());
 
     showDialog(
@@ -214,14 +249,13 @@ class _DreamCommentsState extends State<DreamComments> {
   Widget _buildCommentCard(Map<String, dynamic> comment) {
     final isReady = _readyComments[comment['id']] ?? false;
     final interpretation = comment['interpretation'] ?? '';
-    final timestamp = comment['timestamp'] as Timestamp;
-    final timerEnd = comment['timerEnd'] as Timestamp;
+    final timestamp = comment['date'] as Timestamp;
     final date = timestamp.toDate();
     final formattedDate = DateFormat('dd.MM.yyyy HH:mm').format(date);
 
     void _showWaitDialog() {
       final now = DateTime.now();
-      final end = timerEnd.toDate();
+      final end = timestamp.toDate();
       if (now.isBefore(end)) {
         final remaining = end.difference(now);
         final minutes = remaining.inMinutes;
@@ -385,34 +419,304 @@ class _DreamCommentsState extends State<DreamComments> {
     });
   }
 
+  String _formatDate(Timestamp timestamp) {
+    final date = timestamp.toDate();
+    return DateFormat('dd.MM.yyyy HH:mm').format(date);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      appBar: CustomAppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
+            colors: [
+              Color(0xFF2C1F63),
+              Color(0xFF1A1034),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A237E),
-              Color(0xFF0D47A1),
-            ],
           ),
         ),
-        child: _isLoading
-            ? Center(child: CircularProgressIndicator())
-            : _comments.isEmpty
-                ? Center(
-                    child: Text(
-                      'Henüz rüya yorumu bulunmuyor.',
-                      style: TextStyle(color: Colors.white),
+        child: Column(
+          children: [
+            // Başlık
+            Container(
+              padding: EdgeInsets.fromLTRB(24, 40, 24, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Yorumlarım',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: _comments.length,
-                    itemBuilder: (context, index) => _buildCommentCard(_comments[index]),
                   ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Rüya ve astroloji yorumların',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Yorum Listesi
+            Expanded(
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator(color: Colors.white))
+                  : _comments.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Henüz yorumun yok',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _comments.length,
+                          itemBuilder: (context, index) {
+                            final comment = _comments[index];
+                            final isAstrology = comment['type'] == 'astrology';
+                            
+                            return Card(
+                              margin: EdgeInsets.only(bottom: 16),
+                              elevation: 4,
+                              color: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Color(0xFF3D2C8D).withOpacity(0.95),
+                                      Color(0xFF1A1034).withOpacity(0.95),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            isAstrology ? Icons.auto_awesome : Icons.nightlight_round,
+                                            color: isAstrology ? Colors.amber : Colors.white,
+                                            size: 24,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            isAstrology ? 'Astroloji Yorumu' : 'Rüya Yorumu',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Spacer(),
+                                          Text(
+                                            _formatDate(comment['date'] as Timestamp),
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 12),
+                                      isAstrology
+                                          ? Column(
+                                              children: comment['reading'].split('\n\n').map((section) {
+                                                if (section.contains('**')) {
+                                                  return Container(
+                                                    width: double.infinity,
+                                                    margin: EdgeInsets.only(top: 16, bottom: 8),
+                                                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                    decoration: BoxDecoration(
+                                                      gradient: LinearGradient(
+                                                        colors: [
+                                                          Color(0xFF5D4B9E).withOpacity(0.3),
+                                                          Color(0xFF3D2C8D).withOpacity(0.3),
+                                                        ],
+                                                        begin: Alignment.centerLeft,
+                                                        end: Alignment.centerRight,
+                                                      ),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                      border: Border.all(
+                                                        color: Colors.amber.withOpacity(0.3),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      section.replaceAll('**', ''),
+                                                      style: TextStyle(
+                                                        color: Colors.amber,
+                                                        fontSize: 18,
+                                                        fontWeight: FontWeight.bold,
+                                                        height: 1.6,
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  );
+                                                } else {
+                                                  return Padding(
+                                                    padding: EdgeInsets.symmetric(horizontal: 8),
+                                                    child: Text(
+                                                      section,
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 16,
+                                                        height: 1.6,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }).toList(),
+                                            )
+                                          : (_readyComments[comment['id']] ?? false)
+                                              ? Text(
+                                                  comment['interpretation'] ?? 'Yorum hazırlanıyor...',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    height: 1.6,
+                                                  ),
+                                                )
+                                              : InkWell(
+                                                  onTap: () {
+                                                    final now = DateTime.now();
+                                                    final end = (comment['date'] as Timestamp).toDate();
+                                                    if (now.isBefore(end)) {
+                                                      final remaining = end.difference(now);
+                                                      final minutes = remaining.inMinutes;
+                                                      final seconds = remaining.inSeconds % 60;
+                                                      
+                                                      showDialog(
+                                                        context: context,
+                                                        barrierDismissible: false,
+                                                        builder: (context) => Dialog(
+                                                          backgroundColor: Colors.transparent,
+                                                          child: Container(
+                                                            padding: EdgeInsets.all(20),
+                                                            decoration: BoxDecoration(
+                                                              color: Color(0xFF1d0042),
+                                                              borderRadius: BorderRadius.circular(15),
+                                                              border: Border.all(color: Color(0xFF6602ad), width: 2),
+                                                            ),
+                                                            child: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                Lottie.asset(
+                                                                  'assets/gif/loading.json',
+                                                                  width: 150,
+                                                                  height: 150,
+                                                                ),
+                                                                SizedBox(height: 20),
+                                                                Text(
+                                                                  'Rüya Yorumunuza Ulaşmak İçin',
+                                                                  style: TextStyle(
+                                                                    color: Colors.white,
+                                                                    fontSize: 18,
+                                                                    fontWeight: FontWeight.bold,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(height: 10),
+                                                                Text(
+                                                                  '${minutes}:${seconds.toString().padLeft(2, '0')}',
+                                                                  style: TextStyle(
+                                                                    color: Colors.amber,
+                                                                    fontSize: 24,
+                                                                    fontWeight: FontWeight.bold,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(height: 10),
+                                                                Text(
+                                                                  'bekleyin veya',
+                                                                  style: TextStyle(
+                                                                    color: Colors.white70,
+                                                                    fontSize: 14,
+                                                                  ),
+                                                                ),
+                                                                SizedBox(height: 20),
+                                                                ElevatedButton.icon(
+                                                                  onPressed: () {
+                                                                    Navigator.pop(context);
+                                                                    _showAd(comment['id']);
+                                                                  },
+                                                                  icon: Icon(Icons.play_circle_outline),
+                                                                  label: Text('Reklam İzleyerek Hemen Açın'),
+                                                                  style: ElevatedButton.styleFrom(
+                                                                    backgroundColor: Colors.amber,
+                                                                    foregroundColor: Colors.black,
+                                                                    minimumSize: Size(double.infinity, 45),
+                                                                  ),
+                                                                ),
+                                                                SizedBox(height: 10),
+                                                                TextButton(
+                                                                  onPressed: () => Navigator.pop(context),
+                                                                  child: Text(
+                                                                    'Beklemeye Devam Et',
+                                                                    style: TextStyle(color: Colors.white70),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.symmetric(vertical: 8),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.lock_clock, color: Colors.amber),
+                                                        SizedBox(width: 8),
+                                                        Text(
+                                                          'Yorumu görmek için tıklayın',
+                                                          style: TextStyle(
+                                                            color: Colors.amber,
+                                                            fontStyle: FontStyle.italic,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
     );
   }

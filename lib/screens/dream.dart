@@ -13,6 +13,7 @@ import 'package:lottie/lottie.dart';
 import 'package:dream_app_flutter/screens/dream_interpretations.dart';
 import 'package:dream_app_flutter/screens/homepage.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:dream_app_flutter/screens/profile.dart';
 
 class Dream extends StatefulWidget {
   const Dream({super.key});
@@ -22,12 +23,13 @@ class Dream extends StatefulWidget {
 }
 
 class _DreamState extends State<Dream> {
-  int _selectedIndex = 2; // Profil seçili
+  int _selectedIndex = 2; // Hiçbir seçenek seçili değil
   String dreamText = ""; // Kullanıcının rüya metnini tutar
   int maxLength = 1000; // Karakter sınırı
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _dreamController = TextEditingController();
+  bool _hasUsedVoiceInput = false; // Yeni değişken
 
   // Gemini API için model
   late GenerativeModel _model;
@@ -48,6 +50,7 @@ class _DreamState extends State<Dream> {
     );
     _testGeminiConnection();
     _initSpeech();
+    _hasUsedVoiceInput = false; // Sayfa her açıldığında sıfırla
   }
 
   // Gemini API bağlantı testi
@@ -93,7 +96,6 @@ class _DreamState extends State<Dream> {
     }
 
     if (!_isSpeechEnabled) {
-      // İzin kontrolü
       _isSpeechEnabled = await _speech.initialize(
         onError: (error) => print('Speech Error: $error'),
         onStatus: (status) => print('Speech Status: $status'),
@@ -115,20 +117,22 @@ class _DreamState extends State<Dream> {
     
     if (!_isListening) {
       // Coin kontrolü
-      if (userProvider.coins < 50) {
+      if (userProvider.coins < 35) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sesli anlatım için 50 coin gerekiyor.'),
+            content: Text('Sesli anlatım için 35 coin gerekiyor.'),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
 
-      // Coinleri düş
-      await userProvider.deductCoins(50);
+      // Eğer daha önce kullanılmamışsa coinleri düş
+      if (!_hasUsedVoiceInput) {
+        await userProvider.deductCoins(35);
+        _hasUsedVoiceInput = true;
+      }
       
-      // Ses kaydını başlat
       if (await _speech.listen(
         onResult: (result) {
           setState(() {
@@ -168,7 +172,18 @@ class _DreamState extends State<Dream> {
           MaterialPageRoute(builder: (context) => DreamInterpretations()),
         );
         break;
-     
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Dream()),
+        );
+        break;
+      case 3:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Profile()),
+        );
+        break;
     }
   }
 
@@ -285,7 +300,8 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
     double screenWidth = MediaQuery.of(context).size.width;   // Ekran genişliği
 
     return Scaffold(
-      appBar: CustomAppBar(),
+      resizeToAvoidBottomInset: true,
+      appBar: null, // AppBar'ı kaldır
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -387,7 +403,7 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                                   ),
                                   SizedBox(height: 8),
                                   Text(
-                                    'Mikrofona dokun ve rüyanı anlatmaya başla',
+                                    'Mikrofona dokun ve rüyanı anlatmaya başla\n(35 Coin)',
                                     style: TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
@@ -470,6 +486,10 @@ doğum tarihinden her rüyada bahsetmek zorunda değilsin ayrıca gün ay yıl �
                       ),
                       child: TextField(
                         controller: _dreamController,
+                        autofocus: true,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        focusNode: FocusNode(),
                         onChanged: (value) {
                           setState(() {
                             dreamText = value;
